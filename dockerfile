@@ -12,11 +12,11 @@ RUN npm run build
 
 FROM nginx:1.27-alpine
 
-# ลบ config เดิม
-RUN rm /etc/nginx/conf.d/default.conf
+# Default backend API endpoint (HTTP)
+ENV VITE_API_BASE_URL=http://host.docker.internal:8089
 
-# copy config ใหม่
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy nginx template so the default nginx entrypoint can render it via envsubst
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 
 # copy build
 COPY --from=builder /app/dist /usr/share/nginx/html
