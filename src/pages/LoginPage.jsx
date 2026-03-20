@@ -71,6 +71,7 @@ function LoginPage({ setIsLoggedIn }) {
       </div>
 
       <div className="login-right">
+        <div className="top-right-circle"></div>
         <Card className="login-card-v2" bordered={false}>
           <div className="login-header-v2">
             <Title level={1} className="login-title-v2">

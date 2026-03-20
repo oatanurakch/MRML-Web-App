@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from 'react'
-import { Row, Col, Card, Select, Button, Typography, message } from 'antd'
-import { ReloadOutlined, LogoutOutlined } from '@ant-design/icons'
+import { Row, Col, Card, Select, Button, Typography, message, DatePicker, TimePicker, } from 'antd'
+import { ReloadOutlined, LogoutOutlined, DownloadOutlined, } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import ReactECharts from 'echarts-for-react'
 import * as echarts from 'echarts'
+import dayjs from 'dayjs'
 import './DashboardPage.css'
 
 
@@ -18,6 +19,13 @@ function DashboardPage({ setIsLoggedIn }) {
   const [selectedNode, setSelectedNode] = useState(null)
   const [timeRange, setTimeRange] = useState('1h')
   const [chartData, setChartData] = useState([])
+
+  const [fromDate, setFromDate] = useState(dayjs().subtract(1, 'day'))
+  const [fromTime, setFromTime] = useState(dayjs().startOf('day'))
+  const [toDate, setToDate] = useState(dayjs())
+  const [toTime, setToTime] = useState(dayjs())
+  const [exportLoading, setExportLoading] = useState(false)
+
   const lastActivityTimeRef = useRef(Date.now())
   const autoRefreshIntervalRef = useRef(null)
   const inactivityCheckIntervalRef = useRef(null)
@@ -71,10 +79,26 @@ function DashboardPage({ setIsLoggedIn }) {
     return `${day} ${month} ${year} ${hours}:${minutes}`
   }
 
+  const combineDateTime = (dateValue, timeValue) => {
+    if (!dateValue || !timeValue) return null
+
+    return dayjs(dateValue)
+      .hour(dayjs(timeValue).hour())
+      .minute(dayjs(timeValue).minute())
+      .second(dayjs(timeValue).second())
+      .millisecond(0)
+  }
+
+  const formatDateTimeForApi = (value) => {
+    return dayjs(value).format('YYYY-MM-DDTHH:mm:ss')
+  }
+
   const buildChartOption = (data, dataKey, lineName, color) => {
     const total = data.length
     const visibleCount = 10
-    const endPercent = total > 0 ? Math.min(100, (visibleCount / total) * 100) : 100
+
+    const startIndex = Math.max(0, total - visibleCount)
+    const endIndex = Math.max(0, total - 1)
 
     return {
       animation: true,
@@ -89,13 +113,13 @@ function DashboardPage({ setIsLoggedIn }) {
               <div>${lineName}: ${point.data ?? '-'}</div>
             </div>
           `
-        }
+        },
       },
       grid: {
         top: 30,
         left: 50,
         right: 30,
-        bottom: 110
+        bottom: 110,
       },
       xAxis: {
         type: 'category',
@@ -103,29 +127,30 @@ function DashboardPage({ setIsLoggedIn }) {
         data: data.map((item) => item.time),
         axisLabel: {
           rotate: 20,
-          formatter: (value) => formatDateTime(value)
-        }
+          margin: 16,
+          formatter: (value) => formatDateTime(value),
+        },
       },
       yAxis: {
         type: 'value',
-        scale: true
+        scale: true,
       },
       dataZoom: [
         {
           type: 'slider',
-          start: 0,
-          end: endPercent,
+          startValue: startIndex,
+          endValue: endIndex,
           bottom: 10,
-          height: 20
+          height: 18,
         },
         {
           type: 'inside',
-          start: 0,
-          end: endPercent,
+          startValue: startIndex,
+          endValue: endIndex,
           zoomOnMouseWheel: true,
           moveOnMouseMove: true,
-          moveOnMouseWheel: true
-        }
+          moveOnMouseWheel: true,
+        },
       ],
       series: [
         {
@@ -133,16 +158,18 @@ function DashboardPage({ setIsLoggedIn }) {
           type: 'line',
           smooth: true,
           showSymbol: true,
+          symbol: 'circle',
+          symbolSize: 7,
           data: data.map((item) => item[dataKey]),
           lineStyle: {
             width: 2,
-            color: color
+            color: color,
           },
           itemStyle: {
-            color: color
-          }
-        }
-      ]
+            color: color,
+          },
+        },
+      ],
     }
   }
 
@@ -175,12 +202,14 @@ function DashboardPage({ setIsLoggedIn }) {
 
       const raw = Array.isArray(res.data?.data) ? res.data.data : []
 
-      const mapped = raw.map((item) => ({
-        time: item.timestamp,
-        translation_x: item.translation_x,
-        translation_y: item.translation_y,
-        zeta: item.zeta
-      }))
+      const mapped = raw
+        .map((item) => ({
+          time: item.timestamp,
+          translation_x: item.translation_x,
+          translation_y: item.translation_y,
+          zeta: item.zeta,
+        }))
+        .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
 
       setChartData(mapped)
     } catch (error) {
@@ -211,6 +240,63 @@ function DashboardPage({ setIsLoggedIn }) {
     }
   }
 
+  const handleDownloadCSV = async () => {
+    if (!selectedNode) {
+      message.warning('Please select node first')
+      return
+    }
+
+    const fromDateTime = combineDateTime(fromDate, fromTime)
+    const toDateTime = combineDateTime(toDate, toTime)
+
+    if (!fromDateTime || !toDateTime) {
+      message.warning('Please select date and time range')
+      return
+    }
+
+    if (fromDateTime.isAfter(toDateTime)) {
+      message.warning('From date/time must be earlier than To date/time')
+      return
+    }
+
+    setExportLoading(true)
+
+    try {
+      const formData = new URLSearchParams()
+      formData.append('node_sn_id', String(selectedNode))
+      formData.append('date_from', formatDateTimeForApi(fromDateTime))
+      formData.append('date_to', formatDateTimeForApi(toDateTime))
+
+      const res = await axios.post('/api/node/export/', formData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      })
+
+      const success = res.data?.success
+      const downloadUrl = res.data?.download_url
+      const record_count = res.data?.record_count ?? 0
+
+      if (!success || !downloadUrl) {
+        message.error('Download link not found')
+        return
+      }
+
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.setAttribute('download', `node_${selectedNode}_data.csv`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      message.success(`Export ready  (${res.data?.record_count ?? 0}) records`)
+    } catch (error) {
+      console.error('Export CSV error:', error)
+      message.error('Failed to download file')
+    } finally {
+      setExportLoading(false)
+    }
+  }
+
   const handleLogout = async () => {
     if (isLoggingOutRef.current) return
     isLoggingOutRef.current = true
@@ -224,14 +310,13 @@ function DashboardPage({ setIsLoggedIn }) {
           {},
           {
             headers: {
-              Authorization: `Token ${token}`
-            }
+              Authorization: `Token ${token}`,
+            },
           }
         )
       }
     } catch (error) {
       console.error('Logout API error:', error)
-
     } finally {
       localStorage.removeItem('token')
       localStorage.removeItem('user_detail')
@@ -311,17 +396,19 @@ function DashboardPage({ setIsLoggedIn }) {
   }, [chartData, selectedNode, timeRange])
 
   return (
-    <div className="dashboard-page">
-      <div className="dashboard-header">
+    <div className="dashboard-hero">
+      <div className="dashboard-hero-top">
         <div className="dashboard-header-left">
           <img src="/logo.png" alt="MRML Logo" className="dashboard-logo" />
           <div>
-            <Title level={2} className="dashboard-title">
-              MRML Web App
+            <Title level={2} className="dashboard-title dashboard-title-light">
+              MRML Application
             </Title>
           </div>
         </div>
       </div>
+
+
 
       <div className="dashboard-toolbar">
         <div className="dashboard-filters">
@@ -383,9 +470,9 @@ function DashboardPage({ setIsLoggedIn }) {
         </div>
       </div>
 
-      <Row gutter={[20, 20]}>
-        <Col xs={24} md={12}>
-          <Card title="Raw Data Chart" className="chart-card">
+      <Row gutter={[20, 20]} align="stretch">
+        <Col xs={24} md={12} className="dashboard-col">
+          <Card title="Raw Data Chart" className="chart-card dashboard-card">
             <ReactECharts
               ref={chartRef1}
               option={buildChartOption(chartData, 'translation_x', 'translation_x', '#1677ff')}
@@ -396,8 +483,8 @@ function DashboardPage({ setIsLoggedIn }) {
           </Card>
         </Col>
 
-        <Col xs={24} md={12}>
-          <Card title="Translation Chart" className="chart-card">
+        <Col xs={24} md={12} className="dashboard-col">
+          <Card title="Translation Chart" className="chart-card dashboard-card">
             <ReactECharts
               ref={chartRef2}
               option={buildChartOption(chartData, 'translation_y', 'translation_y', '#52c41a')}
@@ -408,8 +495,8 @@ function DashboardPage({ setIsLoggedIn }) {
           </Card>
         </Col>
 
-        <Col xs={24} md={12}>
-          <Card title="Zeta Chart" className="chart-card">
+        <Col xs={24} md={12} className="dashboard-col">
+          <Card title="Zeta Chart" className="chart-card dashboard-card">
             <ReactECharts
               ref={chartRef3}
               option={buildChartOption(chartData, 'zeta', 'zeta', '#fa8c16')}
@@ -417,6 +504,81 @@ function DashboardPage({ setIsLoggedIn }) {
               notMerge={true}
               lazyUpdate={true}
             />
+          </Card>
+        </Col>
+
+        <Col xs={24} md={12} className="dashboard-col">
+          <Card title="Export CSV" className="chart-card dashboard-card export-main-card">
+            <div className="export-modern">
+              <div className="export-section export-section-start">
+                <div className="export-section-title">From</div>
+                <div className="export-date-grid">
+                  <div className="export-date-box">
+                    <div className="export-box-label">Date</div>
+                    <DatePicker
+                      value={fromDate}
+                      onChange={(value) => setFromDate(value)}
+                      className="export-date"
+                      format="DD MMM YYYY"
+                    />
+                  </div>
+
+                  <div className="export-date-box">
+                    <div className="export-box-label">Time</div>
+                    <TimePicker
+                      value={fromTime}
+                      onChange={(value) => setFromTime(value)}
+                      className="export-time"
+                      format="HH:mm:ss"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="export-duration-box">
+                Duration: {
+                  (combineDateTime(toDate, toTime) && combineDateTime(fromDate, fromTime))
+                    ? `${combineDateTime(toDate, toTime).diff(combineDateTime(fromDate, fromTime), 'day')} Days ${combineDateTime(toDate, toTime).diff(combineDateTime(fromDate, fromTime), 'hour') % 24} Hours`
+                    : '-'
+                }
+              </div>
+
+              <div className="export-section export-section-end">
+                <div className="export-section-title">To</div>
+                <div className="export-date-grid">
+                  <div className="export-date-box">
+                    <div className="export-box-label">Date</div>
+                    <DatePicker
+                      value={toDate}
+                      onChange={(value) => setToDate(value)}
+                      className="export-date"
+                      format="DD MMM YYYY"
+                    />
+                  </div>
+
+                  <div className="export-date-box">
+                    <div className="export-box-label">Time</div>
+                    <TimePicker
+                      value={toTime}
+                      onChange={(value) => setToTime(value)}
+                      className="export-time"
+                      format="HH:mm:ss"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                type="primary"
+                icon={<DownloadOutlined />}
+                onClick={handleDownloadCSV}
+                loading={exportLoading}
+                className="export-download-btn-modern"
+                block
+              >
+                Download
+              </Button>
+            </div>
           </Card>
         </Col>
       </Row>
