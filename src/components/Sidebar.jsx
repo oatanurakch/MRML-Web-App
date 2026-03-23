@@ -1,5 +1,5 @@
 import { Layout, Menu } from 'antd'
-import { DashboardOutlined, BarChartOutlined, LogoutOutlined } from '@ant-design/icons'
+import { DashboardOutlined, BarChartOutlined, ApartmentOutlined, LogoutOutlined } from '@ant-design/icons'
 import { useLocation, useNavigate } from 'react-router-dom'
 import './Sidebar.css'
 
@@ -12,6 +12,8 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
   const handleMenuClick = (key) => {
     if (key === 'dashboard') {
       navigate('/dashboard')
+    } else if (key === 'node') {
+      navigate('/node')
     } else if (key === 'smr-rmr') {
       navigate('/smr-rmr')
     } else if (key === 'logout') {
@@ -21,11 +23,17 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
 
   const menuItems = [
     { key: 'dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
+    { key: 'node', icon: <ApartmentOutlined />, label: 'Node' },
     { key: 'smr-rmr', icon: <BarChartOutlined />, label: 'SMR/RMR' },
     { key: 'logout', icon: <LogoutOutlined />, label: 'Logout' }
   ]
 
-  const selectedKey = location.pathname.startsWith('/smr-rmr') ? 'smr-rmr' : 'dashboard'
+  let selectedKey = 'dashboard'
+  if (location.pathname.startsWith('/node')) {
+    selectedKey = 'node'
+  } else if (location.pathname.startsWith('/smr-rmr')) {
+    selectedKey = 'smr-rmr'
+  }
 
   return (
     <Sider 

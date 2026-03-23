@@ -3,6 +3,7 @@ import { useState } from 'react'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import SmrRmrPage from './pages/SmrRmrPage'
+import NodePage from './pages/NodePage'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'))
@@ -34,6 +35,16 @@ function App() {
         element={
           isLoggedIn ? (
             <SmrRmrPage setIsLoggedIn={setIsLoggedIn} />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+      <Route
+        path="/node"
+        element={
+          isLoggedIn ? (
+            <NodePage setIsLoggedIn={setIsLoggedIn} />
           ) : (
             <Navigate to="/" replace />
           )
