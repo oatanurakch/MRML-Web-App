@@ -366,6 +366,39 @@ function NodePage({ setIsLoggedIn }) {
       setSmrLoading(true)
       const values = await smrForm.validateFields()
 
+      const jointStrike = [
+        values.j1_strike,
+        values.j2_strike,
+        values.j3_strike,
+        values.j4_strike,
+      ]
+        .filter((value) => value !== undefined && value !== null && value !== '')
+        .map((value) => String(value))
+        .join(',')
+
+      const jointDip = [
+        values.j1_dip,
+        values.j2_dip,
+        values.j3_dip,
+        values.j4_dip,
+      ]
+        .filter((value) => value !== undefined && value !== null && value !== '')
+        .map((value) => String(value))
+        .join(',')
+
+      const payload = {
+        slope_face_strike: values.slope_face_strike ?? null,
+        slope_face_dip: values.slope_face_dip ?? null,
+        joint_strike: jointStrike,
+        joint_dip: jointDip,
+      }
+
+      const response = await axios.post(`/api/node/smr/${selectedNode.id}/`, payload)
+
+      if (response?.status !== 201) {
+        throw new Error(`Unexpected response status: ${response?.status ?? 'unknown'}`)
+      }
+
       setSmrLocalDrafts((prev) => ({
         ...prev,
         [selectedNode.id]: values,
@@ -376,7 +409,12 @@ function NodePage({ setIsLoggedIn }) {
     } catch (error) {
       const isValidationError = Array.isArray(error?.errorFields)
       if (!isValidationError) {
-        const reason = error?.message || 'Unknown error'
+        const reason =
+          error?.response?.data?.detail ||
+          error?.response?.data?.message ||
+          (typeof error?.response?.data === 'string' ? error.response.data : null) ||
+          error?.message ||
+          'Unknown error'
         message.error(`บันทึก SMR ไม่สำเร็จ: ${reason}`)
       }
     } finally {
@@ -645,6 +683,9 @@ function NodePage({ setIsLoggedIn }) {
                                   if (Number.isNaN(numberValue)) {
                                     return Promise.reject(new Error('Numeric value only'))
                                   }
+                                  if (!Number.isInteger(numberValue)) {
+                                    return Promise.reject(new Error('Integer value only'))
+                                  }
                                   if (numberValue < item.min || numberValue > item.max) {
                                     return Promise.reject(new Error(`Value must be between ${item.min} and ${item.max}`))
                                   }
@@ -658,8 +699,8 @@ function NodePage({ setIsLoggedIn }) {
                               className="node-smr-input"
                               min={item.min}
                               max={item.max}
-                              step={0.01}
-                              stringMode
+                              step={1}
+                              precision={0}
                               controls={false}
                               placeholder={`${item.min} - ${item.max}`}
                             />

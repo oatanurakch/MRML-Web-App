@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import SmrRmrPage from './pages/SmrRmrPage'
 import NodePage from './pages/NodePage'
+import ProfilePage from './pages/ProfilePage'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'))
@@ -45,6 +46,16 @@ function App() {
         element={
           isLoggedIn ? (
             <NodePage setIsLoggedIn={setIsLoggedIn} />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          isLoggedIn ? (
+            <ProfilePage setIsLoggedIn={setIsLoggedIn} />
           ) : (
             <Navigate to="/" replace />
           )

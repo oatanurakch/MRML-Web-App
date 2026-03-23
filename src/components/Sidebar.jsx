@@ -1,5 +1,5 @@
 import { Layout, Menu } from 'antd'
-import { DashboardOutlined, BarChartOutlined, ApartmentOutlined, LogoutOutlined } from '@ant-design/icons'
+import { DashboardOutlined, BarChartOutlined, ApartmentOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons'
 import { useLocation, useNavigate } from 'react-router-dom'
 import './Sidebar.css'
 
@@ -14,6 +14,8 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
       navigate('/dashboard')
     } else if (key === 'node') {
       navigate('/node')
+    } else if (key === 'profile') {
+      navigate('/profile')
     } else if (key === 'smr-rmr') {
       navigate('/smr-rmr')
     } else if (key === 'logout') {
@@ -24,6 +26,7 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
   const menuItems = [
     { key: 'dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
     { key: 'node', icon: <ApartmentOutlined />, label: 'Node' },
+    { key: 'profile', icon: <UserOutlined />, label: 'Profile' },
     { key: 'smr-rmr', icon: <BarChartOutlined />, label: 'SMR/RMR' },
     { key: 'logout', icon: <LogoutOutlined />, label: 'Logout' }
   ]
@@ -31,6 +34,8 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
   let selectedKey = 'dashboard'
   if (location.pathname.startsWith('/node')) {
     selectedKey = 'node'
+  } else if (location.pathname.startsWith('/profile')) {
+    selectedKey = 'profile'
   } else if (location.pathname.startsWith('/smr-rmr')) {
     selectedKey = 'smr-rmr'
   }
