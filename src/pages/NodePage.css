@@ -87,6 +87,52 @@
   letter-spacing: 0.2px;
 }
 
+.node-rmr-button {
+  border-radius: 10px !important;
+  font-weight: 700;
+  border-color: #0ea5e9 !important;
+  color: #0369a1 !important;
+  background: #f0f9ff !important;
+}
+
+.node-rmr-button:hover {
+  background: #e0f2fe !important;
+  border-color: #0284c7 !important;
+  color: #0c4a6e !important;
+}
+
+.node-action-group {
+  display: flex;
+  gap: 8px;
+}
+
+.node-smr-button {
+  border-radius: 10px !important;
+  font-weight: 700;
+  border-color: #22c55e !important;
+  color: #166534 !important;
+  background: #f0fdf4 !important;
+}
+
+.node-smr-button:hover {
+  background: #dcfce7 !important;
+  border-color: #16a34a !important;
+  color: #14532d !important;
+}
+
+.node-rmr-modal .ant-modal-content {
+  border-radius: 16px;
+}
+
+.node-rmr-form .ant-form-item {
+  margin-bottom: 12px;
+}
+
+.node-rmr-form .ant-form-item-label > label {
+  font-weight: 600;
+  color: #334155;
+}
+
 @media (max-width: 992px) {
   .node-page {
     padding: 16px;
