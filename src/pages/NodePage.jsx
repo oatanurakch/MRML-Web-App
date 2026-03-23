@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Layout, Typography, Card, Table, Button, Alert, Spin, message, Modal, Form, Select, Row, Col } from 'antd'
+import { Layout, Typography, Card, Table, Button, Alert, Spin, message, Modal, Form, Select, Row, Col, InputNumber } from 'antd'
 import { ReloadOutlined, EditOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
@@ -66,11 +66,50 @@ const dropdownConfigs = [
   },
 ]
 
+const smrFieldGroups = [
+  {
+    section: 'Slope Face Parameter',
+    fields: [
+      { field: 'slope_face_strike', label: 'Slop Face Strike(Degree)', min: 0, max: 360 },
+      { field: 'slope_face_dip', label: 'Slop Face Dip(Degree)', min: 0, max: 90 },
+    ],
+  },
+  {
+    section: 'Joint Set J1',
+    fields: [
+      { field: 'j1_strike', label: 'Strike(degree)', min: 0, max: 360 },
+      { field: 'j1_dip', label: 'Dip(degree)', min: 0, max: 90 },
+    ],
+  },
+  {
+    section: 'Joint Set J2',
+    fields: [
+      { field: 'j2_strike', label: 'Strike(degree)', min: 0, max: 360 },
+      { field: 'j2_dip', label: 'Dip(degree)', min: 0, max: 90 },
+    ],
+  },
+  {
+    section: 'Joint Set J3',
+    fields: [
+      { field: 'j3_strike', label: 'Strike(degree)', min: 0, max: 360 },
+      { field: 'j3_dip', label: 'Dip(degree)', min: 0, max: 90 },
+    ],
+  },
+  {
+    section: 'Joint Set J4',
+    fields: [
+      { field: 'j4_strike', label: 'Strike(degree)', min: 0, max: 360 },
+      { field: 'j4_dip', label: 'Dip(degree)', min: 0, max: 90 },
+    ],
+  },
+]
+
 const normalizeText = (value) => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
 
 function NodePage({ setIsLoggedIn }) {
   const navigate = useNavigate()
   const [form] = Form.useForm()
+  const [smrForm] = Form.useForm()
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -78,8 +117,13 @@ function NodePage({ setIsLoggedIn }) {
   const [errorText, setErrorText] = useState('')
   const [rmrModalOpen, setRmrModalOpen] = useState(false)
   const [rmrLoading, setRmrLoading] = useState(false)
+  const [smrModalOpen, setSmrModalOpen] = useState(false)
+  const [smrLoading, setSmrLoading] = useState(false)
   const [selectedNode, setSelectedNode] = useState(null)
   const [rmrLocalDrafts, setRmrLocalDrafts] = useState({})
+  const [smrLocalDrafts, setSmrLocalDrafts] = useState({})
+  const [rmrStatusByNode, setRmrStatusByNode] = useState({})
+  const [smrStatusCheckingByNode, setSmrStatusCheckingByNode] = useState({})
 
   const isLoggingOutRef = useRef(false)
 
@@ -120,6 +164,53 @@ function NodePage({ setIsLoggedIn }) {
     }, {})
   }
 
+  const checkRmrSavedByNodeId = async (nodeId) => {
+    if (!nodeId) return false
+
+    try {
+      const response = await axios.get(`/api/node/rmr/${nodeId}`)
+      return response?.status === 200
+    } catch (error) {
+      return false
+    }
+  }
+
+  const refreshRmrStatusForNodes = async (nodes) => {
+    const validNodes = (Array.isArray(nodes) ? nodes : []).filter((node) => node?.id)
+    if (validNodes.length === 0) {
+      setRmrStatusByNode({})
+      return
+    }
+
+    setSmrStatusCheckingByNode((prev) => {
+      const next = { ...prev }
+      validNodes.forEach((node) => {
+        next[node.id] = true
+      })
+      return next
+    })
+
+    const checks = await Promise.allSettled(
+      validNodes.map((node) => checkRmrSavedByNodeId(node.id))
+    )
+
+    const nextStatus = {}
+    checks.forEach((result, index) => {
+      const nodeId = validNodes[index].id
+      nextStatus[nodeId] = result.status === 'fulfilled' ? result.value : false
+    })
+
+    setRmrStatusByNode(nextStatus)
+
+    setSmrStatusCheckingByNode((prev) => {
+      const next = { ...prev }
+      validNodes.forEach((node) => {
+        next[node.id] = false
+      })
+      return next
+    })
+  }
+
   const fetchNodeData = async () => {
     setLoading(true)
     setErrorText('')
@@ -128,6 +219,7 @@ function NodePage({ setIsLoggedIn }) {
       const response = await axios.get('/api/node/list')
       const result = Array.isArray(response.data) ? response.data : []
       setNodeRecords(result)
+      refreshRmrStatusForNodes(result)
     } catch (error) {
       console.error('Node list fetch error:', error)
       setNodeRecords([])
@@ -171,13 +263,61 @@ function NodePage({ setIsLoggedIn }) {
     }
   }
 
-  const handleOpenSmrModal = (record) => {
+  const handleOpenSmrModal = async (record) => {
     if (!record?.id) {
       message.warning('Node ID is required for SMR editing')
       return
     }
 
-    message.info('SMR editor will be added in the next step')
+    setSmrStatusCheckingByNode((prev) => ({ ...prev, [record.id]: true }))
+
+    const hasRmr = await checkRmrSavedByNodeId(record.id)
+
+    setSmrStatusCheckingByNode((prev) => ({ ...prev, [record.id]: false }))
+    setRmrStatusByNode((prev) => ({ ...prev, [record.id]: hasRmr }))
+
+    if (!hasRmr) {
+      message.warning('ไม่สามารถแก้ไข SMR ได้ เนื่องจากยังไม่มีการบันทึกค่า RMR')
+      return
+    }
+
+    setSelectedNode(record)
+    smrForm.resetFields()
+
+    const localDraft = smrLocalDrafts[record.id]
+    if (localDraft) {
+      smrForm.setFieldsValue(localDraft)
+    }
+
+    setSmrModalOpen(true)
+  }
+
+  const handleSaveSmrValues = async () => {
+    try {
+      if (!selectedNode?.id) {
+        message.error('Node ID is required before saving SMR')
+        return
+      }
+
+      setSmrLoading(true)
+      const values = await smrForm.validateFields()
+
+      setSmrLocalDrafts((prev) => ({
+        ...prev,
+        [selectedNode.id]: values,
+      }))
+
+      message.success('บันทึก SMR สำเร็จ')
+      setSmrModalOpen(false)
+    } catch (error) {
+      const isValidationError = Array.isArray(error?.errorFields)
+      if (!isValidationError) {
+        const reason = error?.message || 'Unknown error'
+        message.error(`บันทึก SMR ไม่สำเร็จ: ${reason}`)
+      }
+    } finally {
+      setSmrLoading(false)
+    }
   }
 
   const handleSaveRmrValues = async () => {
@@ -211,6 +351,11 @@ function NodePage({ setIsLoggedIn }) {
       setRmrLocalDrafts((prev) => ({
         ...prev,
         [selectedNode?.id]: values,
+      }))
+
+      setRmrStatusByNode((prev) => ({
+        ...prev,
+        [selectedNode.id]: true,
       }))
 
       message.success('บันทึก RMR สำเร็จ')
@@ -298,6 +443,8 @@ function NodePage({ setIsLoggedIn }) {
           <Button
             icon={<EditOutlined />}
             className="node-smr-button"
+            disabled={!rmrStatusByNode[record.id] || smrStatusCheckingByNode[record.id]}
+            loading={!!smrStatusCheckingByNode[record.id]}
             onClick={() => handleOpenSmrModal(record)}
           >
             SMR
@@ -399,6 +546,66 @@ function NodePage({ setIsLoggedIn }) {
                 </Row>
               </Form>
             </Spin>
+          </Modal>
+
+          <Modal
+            title={`SMR Edit${selectedNode?.node_sn ? ` - ${selectedNode.node_sn}` : ''}`}
+            open={smrModalOpen}
+            onCancel={() => setSmrModalOpen(false)}
+            onOk={handleSaveSmrValues}
+            okText="Save"
+            cancelText="Cancel"
+            className="node-smr-modal"
+            width={900}
+            confirmLoading={smrLoading}
+          >
+            <Form form={smrForm} layout="vertical" className="node-smr-form">
+              {smrFieldGroups.map((group) => (
+                <div key={group.section} className="node-smr-section">
+                  <div className="node-smr-section-title">{group.section}</div>
+                  <Row gutter={[14, 8]}>
+                    {group.fields.map((item) => (
+                      <Col xs={24} md={12} key={item.field}>
+                        <Form.Item
+                          label={item.label}
+                          name={item.field}
+                          rules={[
+                            { required: true, message: 'Please input value' },
+                            {
+                              validator: (_, value) => {
+                                if (value === undefined || value === null || value === '') {
+                                  return Promise.resolve()
+                                }
+
+                                const numberValue = Number(value)
+                                if (Number.isNaN(numberValue)) {
+                                  return Promise.reject(new Error('Numeric value only'))
+                                }
+                                if (numberValue < item.min || numberValue > item.max) {
+                                  return Promise.reject(new Error(`Value must be between ${item.min} and ${item.max}`))
+                                }
+
+                                return Promise.resolve()
+                              },
+                            },
+                          ]}
+                        >
+                          <InputNumber
+                            className="node-smr-input"
+                            min={item.min}
+                            max={item.max}
+                            step={0.01}
+                            stringMode
+                            controls={false}
+                            placeholder={`${item.min} - ${item.max}`}
+                          />
+                        </Form.Item>
+                      </Col>
+                    ))}
+                  </Row>
+                </div>
+              ))}
+            </Form>
           </Modal>
         </div>
       </Content>

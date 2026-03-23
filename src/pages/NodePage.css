@@ -120,6 +120,37 @@
   color: #14532d !important;
 }
 
+.node-smr-modal .ant-modal-content {
+  border-radius: 16px;
+}
+
+.node-smr-section {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.node-smr-section-title {
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.node-smr-input {
+  width: 100%;
+}
+
+.node-smr-form .ant-form-item {
+  margin-bottom: 10px;
+}
+
+.node-smr-form .ant-form-item-label > label {
+  font-weight: 600;
+  color: #334155;
+}
+
 .node-rmr-modal .ant-modal-content {
   border-radius: 16px;
 }
