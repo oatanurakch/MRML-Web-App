@@ -20,6 +20,7 @@ const profileWidgetConfig = [
 function ProfilePage({ setIsLoggedIn }) {
   const navigate = useNavigate()
   const [form] = Form.useForm()
+  const [addUserForm] = Form.useForm()
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [profileData, setProfileData] = useState({
@@ -31,6 +32,8 @@ function ProfilePage({ setIsLoggedIn }) {
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [editingField, setEditingField] = useState(null)
   const [savingEdit, setSavingEdit] = useState(false)
+  const [addUserModalOpen, setAddUserModalOpen] = useState(false)
+  const [creatingUser, setCreatingUser] = useState(false)
 
   const isLoggingOutRef = useRef(false)
 
@@ -179,6 +182,48 @@ function ProfilePage({ setIsLoggedIn }) {
     }
   }
 
+  const handleOpenAddUser = () => {
+    addUserForm.resetFields()
+    setAddUserModalOpen(true)
+  }
+
+  const handleCreateUser = async () => {
+    try {
+      const values = await addUserForm.validateFields()
+
+      setCreatingUser(true)
+      const response = await axios.post('/api-auth/signup/', {
+        username: values.username,
+        email: values.email,
+        password: values.password,
+      })
+
+      if (!response || response.status !== 201) {
+        throw new Error(`Unexpected response status: ${response?.status ?? 'no response'}`)
+      }
+
+      message.success('เพิ่มผู้ใช้งานสำเร็จ')
+      setAddUserModalOpen(false)
+      addUserForm.resetFields()
+    } catch (error) {
+      const isValidationError = Array.isArray(error?.errorFields)
+      if (isValidationError) {
+        return
+      }
+
+      const reason =
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        (typeof error?.response?.data === 'string' ? error.response.data : null) ||
+        error?.message ||
+        'Unknown error'
+
+      message.error(`เพิ่มผู้ใช้งานไม่สำเร็จ: ${reason}`)
+    } finally {
+      setCreatingUser(false)
+    }
+  }
+
   const renderValue = (key) => {
     if (key === 'is_superuser') {
       return profileData.is_superuser
@@ -215,7 +260,17 @@ function ProfilePage({ setIsLoggedIn }) {
             </div>
           </div>
 
-          <Card className="profile-widget" title={<span className="profile-widget-title">Profile Details</span>}>
+          <Card
+            className="profile-widget"
+            title={<span className="profile-widget-title">Profile Details</span>}
+            extra={
+              profileData.is_superuser ? (
+                <Button className="profile-create-user-btn" onClick={handleOpenAddUser}>
+                  Add User
+                </Button>
+              ) : null
+            }
+          >
             <div className="profile-field-list">
               {profileWidgetConfig.map((widget) => (
                 <div key={widget.key} className="profile-field-row">
@@ -223,13 +278,15 @@ function ProfilePage({ setIsLoggedIn }) {
                     <div className="profile-field-label">{widget.title}</div>
                     <div>{renderValue(widget.key)}</div>
                   </div>
-                  <Button
-                    icon={<EditOutlined />}
-                    className="profile-edit-btn"
-                    onClick={() => handleOpenEdit(widget.key)}
-                  >
-                    Edit
-                  </Button>
+                  {widget.key !== 'is_superuser' ? (
+                    <Button
+                      icon={<EditOutlined />}
+                      className="profile-edit-btn"
+                      onClick={() => handleOpenEdit(widget.key)}
+                    >
+                      Edit
+                    </Button>
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -298,6 +355,72 @@ function ProfilePage({ setIsLoggedIn }) {
                   <Input.Password placeholder="Confirm new password" autoComplete="new-password" />
                 </Form.Item>
               ) : null}
+            </Form>
+          </Modal>
+
+          <Modal
+            title="Add New User"
+            open={addUserModalOpen}
+            onCancel={() => setAddUserModalOpen(false)}
+            onOk={handleCreateUser}
+            okText="Create"
+            cancelText="Cancel"
+            confirmLoading={creatingUser}
+            className="profile-edit-modal"
+          >
+            <Form form={addUserForm} layout="vertical">
+              <Form.Item
+                name="username"
+                label="ชื่อผู้ใช้"
+                rules={[{ required: true, message: 'กรุณากรอกชื่อผู้ใช้' }]}
+              >
+                <Input placeholder="ชื่อผู้ใช้" autoComplete="username" />
+              </Form.Item>
+
+              <Form.Item
+                name="email"
+                label="Email"
+                rules={[
+                  { required: true, message: 'กรุณากรอก Email' },
+                  { type: 'email', message: 'รูปแบบ Email ไม่ถูกต้อง' },
+                ]}
+              >
+                <Input placeholder="Email" autoComplete="email" />
+              </Form.Item>
+
+              <Form.Item
+                name="password"
+                label="รหัสผ่าน"
+                rules={[
+                  { required: true, message: 'กรุณากรอกรหัสผ่าน' },
+                  { min: 6, message: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' },
+                  {
+                    pattern: /^(?=.*[A-Za-z])(?=.*\d).+$/,
+                    message: 'รหัสผ่านต้องมีตัวอักษรและตัวเลขผสมกัน',
+                  },
+                ]}
+              >
+                <Input.Password placeholder="รหัสผ่าน" autoComplete="new-password" />
+              </Form.Item>
+
+              <Form.Item
+                name="confirmPassword"
+                label="ยืนยันรหัสผ่าน"
+                dependencies={['password']}
+                rules={[
+                  { required: true, message: 'กรุณายืนยันรหัสผ่าน' },
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      if (!value || getFieldValue('password') === value) {
+                        return Promise.resolve()
+                      }
+                      return Promise.reject(new Error('รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน'))
+                    },
+                  }),
+                ]}
+              >
+                <Input.Password placeholder="ยืนยันรหัสผ่าน" autoComplete="new-password" />
+              </Form.Item>
             </Form>
           </Modal>
         </div>
