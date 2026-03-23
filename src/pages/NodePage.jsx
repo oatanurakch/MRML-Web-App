@@ -70,8 +70,8 @@ const smrFieldGroups = [
   {
     section: 'Slope Face Parameter',
     fields: [
-      { field: 'slope_face_strike', label: 'Slop Face Strike(Degree)', min: 0, max: 360 },
-      { field: 'slope_face_dip', label: 'Slop Face Dip(Degree)', min: 0, max: 90 },
+      { field: 'slope_face_strike', label: 'Slope Face Strike(Degree)', min: 0, max: 360 },
+      { field: 'slope_face_dip', label: 'Slope Face Dip(Degree)', min: 0, max: 90 },
     ],
   },
   {
@@ -162,6 +162,50 @@ function NodePage({ setIsLoggedIn }) {
       }
       return acc
     }, {})
+  }
+
+  const getMappedSmrFormValues = (rawData) => {
+    const list = Array.isArray(rawData) ? rawData : []
+    if (list.length === 0) return {}
+
+    const mapped = {}
+
+    const slopeSource = list.find((item) => item && typeof item === 'object')
+    if (slopeSource) {
+      if (slopeSource.slope_strike !== undefined && slopeSource.slope_strike !== null) {
+        mapped.slope_face_strike = Number(slopeSource.slope_strike)
+      }
+      if (slopeSource.slope_dip !== undefined && slopeSource.slope_dip !== null) {
+        mapped.slope_face_dip = Number(slopeSource.slope_dip)
+      }
+    }
+
+    list.forEach((item) => {
+      if (!item || typeof item !== 'object') return
+
+      const jointName = String(item.Joint ?? '').toUpperCase().trim()
+      const keyPrefix = jointName === 'J1'
+        ? 'j1'
+        : jointName === 'J2'
+          ? 'j2'
+          : jointName === 'J3'
+            ? 'j3'
+            : jointName === 'J4'
+              ? 'j4'
+              : null
+
+      if (!keyPrefix) return
+
+      if (item.joint_strike !== undefined && item.joint_strike !== null) {
+        mapped[`${keyPrefix}_strike`] = Number(item.joint_strike)
+      }
+
+      if (item.joint_dip !== undefined && item.joint_dip !== null) {
+        mapped[`${keyPrefix}_dip`] = Number(item.joint_dip)
+      }
+    })
+
+    return mapped
   }
 
   const checkRmrSavedByNodeId = async (nodeId) => {
@@ -284,9 +328,29 @@ function NodePage({ setIsLoggedIn }) {
     setSelectedNode(record)
     smrForm.resetFields()
 
-    const localDraft = smrLocalDrafts[record.id]
-    if (localDraft) {
-      smrForm.setFieldsValue(localDraft)
+    setSmrLoading(true)
+
+    try {
+      const response = await axios.get(`/api/node/slopeface-joint/${record.id}`)
+      const mappedValues = getMappedSmrFormValues(response.data)
+
+      if (Object.keys(mappedValues).length > 0) {
+        smrForm.setFieldsValue(mappedValues)
+      } else {
+        const localDraft = smrLocalDrafts[record.id]
+        if (localDraft) {
+          smrForm.setFieldsValue(localDraft)
+        }
+      }
+    } catch (error) {
+      const localDraft = smrLocalDrafts[record.id]
+      if (localDraft) {
+        smrForm.setFieldsValue(localDraft)
+      }
+      console.error('Fetch node SMR error:', error)
+      message.error('Failed to load existing SMR values')
+    } finally {
+      setSmrLoading(false)
     }
 
     setSmrModalOpen(true)
@@ -559,53 +623,54 @@ function NodePage({ setIsLoggedIn }) {
             width={900}
             confirmLoading={smrLoading}
           >
-            <Form form={smrForm} layout="vertical" className="node-smr-form">
-              {smrFieldGroups.map((group) => (
-                <div key={group.section} className="node-smr-section">
-                  <div className="node-smr-section-title">{group.section}</div>
-                  <Row gutter={[14, 8]}>
-                    {group.fields.map((item) => (
-                      <Col xs={24} md={12} key={item.field}>
-                        <Form.Item
-                          label={item.label}
-                          name={item.field}
-                          rules={[
-                            { required: true, message: 'Please input value' },
-                            {
-                              validator: (_, value) => {
-                                if (value === undefined || value === null || value === '') {
+            <Spin spinning={smrLoading} tip="Loading existing SMR values...">
+              <Form form={smrForm} layout="vertical" className="node-smr-form">
+                {smrFieldGroups.map((group) => (
+                  <div key={group.section} className="node-smr-section">
+                    <div className="node-smr-section-title">{group.section}</div>
+                    <Row gutter={[14, 8]}>
+                      {group.fields.map((item) => (
+                        <Col xs={24} md={12} key={item.field}>
+                          <Form.Item
+                            label={item.label}
+                            name={item.field}
+                            rules={[
+                              {
+                                validator: (_, value) => {
+                                  if (value === undefined || value === null || value === '') {
+                                    return Promise.resolve()
+                                  }
+
+                                  const numberValue = Number(value)
+                                  if (Number.isNaN(numberValue)) {
+                                    return Promise.reject(new Error('Numeric value only'))
+                                  }
+                                  if (numberValue < item.min || numberValue > item.max) {
+                                    return Promise.reject(new Error(`Value must be between ${item.min} and ${item.max}`))
+                                  }
+
                                   return Promise.resolve()
-                                }
-
-                                const numberValue = Number(value)
-                                if (Number.isNaN(numberValue)) {
-                                  return Promise.reject(new Error('Numeric value only'))
-                                }
-                                if (numberValue < item.min || numberValue > item.max) {
-                                  return Promise.reject(new Error(`Value must be between ${item.min} and ${item.max}`))
-                                }
-
-                                return Promise.resolve()
+                                },
                               },
-                            },
-                          ]}
-                        >
-                          <InputNumber
-                            className="node-smr-input"
-                            min={item.min}
-                            max={item.max}
-                            step={0.01}
-                            stringMode
-                            controls={false}
-                            placeholder={`${item.min} - ${item.max}`}
-                          />
-                        </Form.Item>
-                      </Col>
-                    ))}
-                  </Row>
-                </div>
-              ))}
-            </Form>
+                            ]}
+                          >
+                            <InputNumber
+                              className="node-smr-input"
+                              min={item.min}
+                              max={item.max}
+                              step={0.01}
+                              stringMode
+                              controls={false}
+                              placeholder={`${item.min} - ${item.max}`}
+                            />
+                          </Form.Item>
+                        </Col>
+                      ))}
+                    </Row>
+                  </div>
+                ))}
+              </Form>
+            </Spin>
           </Modal>
         </div>
       </Content>
