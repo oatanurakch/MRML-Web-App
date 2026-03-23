@@ -460,14 +460,15 @@ function DashboardPage({ setIsLoggedIn }) {
 
             <div className="dashboard-actions">
               <Button
-            type="primary"
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              handleRefresh()
-              message.loading('REFRESHING...', 1)
-            }}
-            className="dashboard-action-button refresh-btn"
-          />
+                type="primary"
+                icon={<ReloadOutlined />}
+                onClick={() => {
+                  handleRefresh()
+                  message.loading('REFRESHING...', 1)
+                }}
+                className="refresh-btn"
+                > Refresh
+                </Button>
             </div>
           </div>
 
