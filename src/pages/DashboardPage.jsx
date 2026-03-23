@@ -406,184 +406,188 @@ function DashboardPage({ setIsLoggedIn }) {
         onLogout={handleLogout}
       />
       <Content>
-        <div className="dashboard-hero">
-          <div className="dashboard-hero-top">
-            <div className="dashboard-header-left">
-              <img src="/logo.png" alt="MRML Logo" className="dashboard-logo" />
-              <div>
-                <Title level={2} className="dashboard-title dashboard-title-light">
-                  MRML Application
-                </Title>
+        <div className="dashboard-page">
+          <div className="dashboard-hero">
+            <div className="dashboard-hero-top">
+              <div className="dashboard-header-left">
+                <img src="/logo.png" alt="MRML Logo" className="dashboard-logo" />
+                <div>
+                  <Title level={2} className="dashboard-title dashboard-title-light">
+                    MRML Application
+                  </Title>
+                  <div className="dashboard-hero-subtitle">
+                    Sensor monitoring dashboard with synchronized charts and export tools
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
+            <div className="dashboard-toolbar">
+              <div className="dashboard-filters">
+                <Select
+                  placeholder="Select Node"
+                  className="dashboard-select"
+                  value={selectedNode}
+                  onChange={(value) => {
+                    setSelectedNode(value)
+                    updateActivity()
+                  }}
+                >
+                  {nodeList.map((node) => (
+                    <Option key={node.id} value={node.id}>
+                      NODE S/N : {node.node_sn}
+                    </Option>
+                  ))}
+                </Select>
 
+                <Select
+                  className="dashboard-select"
+                  value={timeRange}
+                  onChange={(value) => {
+                    setTimeRange(value)
+                    updateActivity()
+                  }}
+                >
+                  <Option value="1h">1 Hour</Option>
+                  <Option value="3h">3 Hours</Option>
+                  <Option value="6h">6 Hours</Option>
+                  <Option value="12h">12 Hours</Option>
+                  <Option value="1d">1 Day</Option>
+                  <Option value="7d">7 Days</Option>
+                  <Option value="30d">30 Days</Option>
+                  <Option value="3M">3 Months</Option>
+                  <Option value="1Y">1 Year</Option>
+                </Select>
+              </div>
 
-          <div className="dashboard-toolbar">
-            <div className="dashboard-filters">
-              <Select
-                placeholder="Select Node"
-                className="dashboard-select"
-                value={selectedNode}
-                onChange={(value) => {
-                  setSelectedNode(value)
-                  updateActivity()
-                }}
-              >
-                {nodeList.map((node) => (
-                  <Option key={node.id} value={node.id}>
-                    NODE S/N : {node.node_sn}
-                  </Option>
-                ))}
-              </Select>
-
-              <Select
-                className="dashboard-select"
-                value={timeRange}
-                onChange={(value) => {
-                  setTimeRange(value)
-                  updateActivity()
-                }}
-              >
-                <Option value="1h">1 Hour</Option>
-                <Option value="3h">3 Hours</Option>
-                <Option value="6h">6 Hours</Option>
-                <Option value="12h">12 Hours</Option>
-                <Option value="1d">1 Day</Option>
-                <Option value="7d">7 Days</Option>
-                <Option value="30d">30 Days</Option>
-                <Option value="3M">3 Months</Option>
-                <Option value="1Y">1 Year</Option>
-              </Select>
-            </div>
-
-            <div className="dashboard-actions">
-              <Button
-                type="primary"
-                icon={<ReloadOutlined />}
-                onClick={() => {
-                  handleRefresh()
-                  message.loading('REFRESHING...', 1)
-                }}
-                className="refresh-btn"
-                > Refresh
+              <div className="dashboard-actions">
+                <Button
+                  type="primary"
+                  icon={<ReloadOutlined />}
+                  onClick={() => {
+                    handleRefresh()
+                    message.loading('REFRESHING...', 1)
+                  }}
+                  className="refresh-btn"
+                >
+                  Refresh
                 </Button>
+              </div>
             </div>
+
+            <Row gutter={[20, 20]} align="stretch">
+              <Col xs={24} md={12} className="dashboard-col">
+                <Card title="Raw Data Chart" className="chart-card dashboard-card">
+                  <ReactECharts
+                    ref={chartRef1}
+                    option={buildChartOption(chartData, 'translation_x', 'translation_x', '#1677ff')}
+                    style={{ height: 320 }}
+                    notMerge={true}
+                    lazyUpdate={true}
+                  />
+                </Card>
+              </Col>
+
+              <Col xs={24} md={12} className="dashboard-col">
+                <Card title="Translation Chart" className="chart-card dashboard-card">
+                  <ReactECharts
+                    ref={chartRef2}
+                    option={buildChartOption(chartData, 'translation_y', 'translation_y', '#52c41a')}
+                    style={{ height: 320 }}
+                    notMerge={true}
+                    lazyUpdate={true}
+                  />
+                </Card>
+              </Col>
+
+              <Col xs={24} md={12} className="dashboard-col">
+                <Card title="Zeta Chart" className="chart-card dashboard-card">
+                  <ReactECharts
+                    ref={chartRef3}
+                    option={buildChartOption(chartData, 'zeta', 'zeta', '#fa8c16')}
+                    style={{ height: 320 }}
+                    notMerge={true}
+                    lazyUpdate={true}
+                  />
+                </Card>
+              </Col>
+
+              <Col xs={24} md={12} className="dashboard-col">
+                <Card title="Export CSV" className="chart-card dashboard-card export-main-card">
+                  <div className="export-modern">
+                    <div className="export-section export-section-start">
+                      <div className="export-section-title">From</div>
+                      <div className="export-date-grid">
+                        <div className="export-date-box">
+                          <div className="export-box-label">Date</div>
+                          <DatePicker
+                            value={fromDate}
+                            onChange={(value) => setFromDate(value)}
+                            className="export-date"
+                            format="DD MMM YYYY"
+                          />
+                        </div>
+
+                        <div className="export-date-box">
+                          <div className="export-box-label">Time</div>
+                          <TimePicker
+                            value={fromTime}
+                            onChange={(value) => setFromTime(value)}
+                            className="export-time"
+                            format="HH:mm:ss"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="export-duration-box">
+                      Duration: {
+                        (combineDateTime(toDate, toTime) && combineDateTime(fromDate, fromTime))
+                          ? `${combineDateTime(toDate, toTime).diff(combineDateTime(fromDate, fromTime), 'day')} Days ${combineDateTime(toDate, toTime).diff(combineDateTime(fromDate, fromTime), 'hour') % 24} Hours`
+                          : '-'
+                      }
+                    </div>
+
+                    <div className="export-section export-section-end">
+                      <div className="export-section-title">To</div>
+                      <div className="export-date-grid">
+                        <div className="export-date-box">
+                          <div className="export-box-label">Date</div>
+                          <DatePicker
+                            value={toDate}
+                            onChange={(value) => setToDate(value)}
+                            className="export-date"
+                            format="DD MMM YYYY"
+                          />
+                        </div>
+
+                        <div className="export-date-box">
+                          <div className="export-box-label">Time</div>
+                          <TimePicker
+                            value={toTime}
+                            onChange={(value) => setToTime(value)}
+                            className="export-time"
+                            format="HH:mm:ss"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="primary"
+                      icon={<DownloadOutlined />}
+                      onClick={handleDownloadCSV}
+                      loading={exportLoading}
+                      className="export-download-btn-modern"
+                      block
+                    >
+                      Download
+                    </Button>
+                  </div>
+                </Card>
+              </Col>
+            </Row>
           </div>
-
-          <Row gutter={[20, 20]} align="stretch">
-            <Col xs={24} md={12} className="dashboard-col">
-              <Card title="Raw Data Chart" className="chart-card dashboard-card">
-                <ReactECharts
-                  ref={chartRef1}
-                  option={buildChartOption(chartData, 'translation_x', 'translation_x', '#1677ff')}
-                  style={{ height: 320 }}
-                  notMerge={true}
-                  lazyUpdate={true}
-                />
-              </Card>
-            </Col>
-
-            <Col xs={24} md={12} className="dashboard-col">
-              <Card title="Translation Chart" className="chart-card dashboard-card">
-                <ReactECharts
-                  ref={chartRef2}
-                  option={buildChartOption(chartData, 'translation_y', 'translation_y', '#52c41a')}
-                  style={{ height: 320 }}
-                  notMerge={true}
-                  lazyUpdate={true}
-                />
-              </Card>
-            </Col>
-
-            <Col xs={24} md={12} className="dashboard-col">
-              <Card title="Zeta Chart" className="chart-card dashboard-card">
-                <ReactECharts
-                  ref={chartRef3}
-                  option={buildChartOption(chartData, 'zeta', 'zeta', '#fa8c16')}
-                  style={{ height: 320 }}
-                  notMerge={true}
-                  lazyUpdate={true}
-                />
-              </Card>
-            </Col>
-
-            <Col xs={24} md={12} className="dashboard-col">
-              <Card title="Export CSV" className="chart-card dashboard-card export-main-card">
-                <div className="export-modern">
-                  <div className="export-section export-section-start">
-                    <div className="export-section-title">From</div>
-                    <div className="export-date-grid">
-                      <div className="export-date-box">
-                        <div className="export-box-label">Date</div>
-                        <DatePicker
-                          value={fromDate}
-                          onChange={(value) => setFromDate(value)}
-                          className="export-date"
-                          format="DD MMM YYYY"
-                        />
-                      </div>
-
-                      <div className="export-date-box">
-                        <div className="export-box-label">Time</div>
-                        <TimePicker
-                          value={fromTime}
-                          onChange={(value) => setFromTime(value)}
-                          className="export-time"
-                          format="HH:mm:ss"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="export-duration-box">
-                    Duration: {
-                      (combineDateTime(toDate, toTime) && combineDateTime(fromDate, fromTime))
-                        ? `${combineDateTime(toDate, toTime).diff(combineDateTime(fromDate, fromTime), 'day')} Days ${combineDateTime(toDate, toTime).diff(combineDateTime(fromDate, fromTime), 'hour') % 24} Hours`
-                        : '-'
-                    }
-                  </div>
-
-                  <div className="export-section export-section-end">
-                    <div className="export-section-title">To</div>
-                    <div className="export-date-grid">
-                      <div className="export-date-box">
-                        <div className="export-box-label">Date</div>
-                        <DatePicker
-                          value={toDate}
-                          onChange={(value) => setToDate(value)}
-                          className="export-date"
-                          format="DD MMM YYYY"
-                        />
-                      </div>
-
-                      <div className="export-date-box">
-                        <div className="export-box-label">Time</div>
-                        <TimePicker
-                          value={toTime}
-                          onChange={(value) => setToTime(value)}
-                          className="export-time"
-                          format="HH:mm:ss"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="primary"
-                    icon={<DownloadOutlined />}
-                    onClick={handleDownloadCSV}
-                    loading={exportLoading}
-                    className="export-download-btn-modern"
-                    block
-                  >
-                    Download
-                  </Button>
-                </div>
-              </Card>
-            </Col>
-          </Row>
         </div>
       </Content>
     </Layout>

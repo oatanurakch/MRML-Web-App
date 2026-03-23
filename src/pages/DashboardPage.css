@@ -2,20 +2,23 @@
   min-height: 100vh;
   padding: 28px;
   background:
-    linear-gradient(135deg, rgba(22, 119, 255, 0.04), rgba(82, 196, 26, 0.03)),
-    #E5E0D8;
+    radial-gradient(circle at 12% 20%, rgba(234, 179, 8, 0.14), transparent 42%),
+    radial-gradient(circle at 86% 14%, rgba(14, 165, 233, 0.12), transparent 36%),
+    linear-gradient(135deg, #f5f3ea, #f2f8ff);
 }
 
 
 .dashboard-hero {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .dashboard-hero-top {
-  background: #01a65e;
-  /* border-bottom-right-radius: 48px; */
-  padding: 22px 28px 28px;
-  color: #F3F6EB;
+  background: linear-gradient(120deg, #0f766e, #115e59);
+  border-radius: 20px;
+  padding: 20px 24px;
+  color: #f9fafb;
+  margin-bottom: 18px;
+  box-shadow: 0 14px 34px rgba(15, 118, 110, 0.24);
 }
 
 .dashboard-header {
@@ -36,9 +39,8 @@
   height: 56px;
   object-fit: contain;
   border-radius: 50%;
-  background: #F3F6EB;
-  padding: 6px;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  padding: 7px;
 }
 
 .dashboard-title {
@@ -50,7 +52,7 @@
 
 .dashboard-title-light {
   margin: 0 !important;
-  color: #F3F6EB !important;
+  color: #f9fafb !important;
   font-size: 30px !important;
   font-weight: 700 !important;
 }
@@ -63,8 +65,8 @@
 
 .dashboard-hero-subtitle {
   margin-top: 4px;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 16px;
+  color: rgba(241, 245, 249, 0.95);
+  font-size: 14px;
   font-weight: 500;
 }
 
@@ -73,10 +75,10 @@
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 22px;
   padding: 18px 20px;
   background: rgba(255, 255, 255, 0.82);
-  /* border-radius: 18px; */
+  border-radius: 16px;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
   backdrop-filter: blur(8px);
 }
@@ -132,8 +134,8 @@
 .dashboard-card {
   width: 100%;
   min-height: 420px;
-  border-radius: 18px !important;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08) !important;
   border: none !important;
   overflow: hidden;
   display: flex;
@@ -263,9 +265,16 @@
 
 
 @media (max-width: 992px) {
+  .dashboard-page {
+    padding: 16px;
+  }
+
   .dashboard-hero-top {
-    border-bottom-right-radius: 28px;
-    padding: 20px 20px 24px;
+    padding: 18px 18px 20px;
+  }
+
+  .dashboard-title-light {
+    font-size: 24px !important;
   }
 
   .dashboard-toolbar {
