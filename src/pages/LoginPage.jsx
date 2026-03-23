@@ -37,6 +37,7 @@ function LoginPage({ setIsLoggedIn }) {
 
       localStorage.setItem('token', token)
       localStorage.setItem('user_detail', JSON.stringify(userDetail || {}))
+      localStorage.setItem('login_response', JSON.stringify(res.data || {}))
 
       if (remember) {
         localStorage.setItem('remember_username', username)
