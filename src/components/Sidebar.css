@@ -1,0 +1,45 @@
+.app-sidebar {
+  border-right: 1px solid #e5e7eb;
+  box-shadow: 6px 0 20px rgba(15, 23, 42, 0.06);
+}
+
+.sidebar-brand {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid #eef2f7;
+  margin-bottom: 8px;
+}
+
+.sidebar-brand-text {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #0f172a;
+}
+
+.app-sidebar .ant-menu-item {
+  margin: 6px 10px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.app-sidebar .ant-menu-item-selected {
+  background: #e8f3ff !important;
+  color: #0f5fd5 !important;
+}
+
+.app-sidebar .ant-menu-item:hover {
+  background: #f3f7fd;
+}
+
+@media (max-width: 992px) {
+  .sidebar-brand {
+    height: 56px;
+  }
+
+  .sidebar-brand-text {
+    font-size: 16px;
+  }
+}
