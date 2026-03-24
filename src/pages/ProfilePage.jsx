@@ -278,7 +278,7 @@ function ProfilePage({ setIsLoggedIn }) {
                     <div className="profile-field-label">{widget.title}</div>
                     <div>{renderValue(widget.key)}</div>
                   </div>
-                  {widget.key !== 'is_superuser' ? (
+                  {widget.key !== 'is_superuser' && widget.key !== 'username' ? (
                     <Button
                       icon={<EditOutlined />}
                       className="profile-edit-btn"
