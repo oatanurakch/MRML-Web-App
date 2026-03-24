@@ -27,6 +27,7 @@ function ProfilePage({ setIsLoggedIn }) {
     username: '',
     firstname: '',
     last_name: '',
+    email: '',
     is_superuser: false,
   })
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -57,6 +58,7 @@ function ProfilePage({ setIsLoggedIn }) {
       username: userDetail?.username ?? '',
       firstname: userDetail?.firstname ?? userDetail?.first_name ?? '',
       last_name: userDetail?.last_name ?? '',
+      email: userDetail?.email ?? '',
       is_superuser: Boolean(userDetail?.is_superuser),
     })
   }, [])
@@ -141,6 +143,43 @@ function ProfilePage({ setIsLoggedIn }) {
         return
       }
 
+      // สำหรับการแก้ profile ตัวอื่นๆ ให้ทำการ PUT ไปยัง API
+      const token = getTokenFromLoginResponse()
+      const userId = getUserIdFromLoginResponse()
+
+      if (!token) {
+        message.error('Token not found, please login again')
+        return
+      }
+
+      if (!userId) {
+        message.error('User ID not found from login response')
+        return
+      }
+
+      // สร้าง body สำหรับ PUT request โดยใช้ค่าเดิมสำหรับฟิลด์ที่ไม่ได้แก้ไข
+      const putBody = {
+        first_name: editingField === 'firstname' ? nextValue : profileData.firstname,
+        last_name: editingField === 'last_name' ? nextValue : profileData.last_name,
+        email: editingField === 'email' ? nextValue : profileData.email,
+      }
+
+      const response = await axios.put(
+        `/api-auth/updateprofile/${userId}/`,
+        putBody,
+        {
+          headers: {
+            'Content-type': 'application/json',
+            Authorization: `Token ${token}`,
+          },
+        }
+      )
+
+      if (!response || response.status !== 200) {
+        throw new Error(`API did not return HTTP 200 (received: ${response?.status ?? 'no response'})`)
+      }
+
+      // อัปเดต state และ localStorage
       const updated = {
         ...profileData,
         [editingField]: nextValue,
@@ -157,6 +196,7 @@ function ProfilePage({ setIsLoggedIn }) {
         firstname: updated.firstname,
         first_name: updated.firstname,
         last_name: updated.last_name,
+        email: updated.email,
         is_superuser: Boolean(updated.is_superuser),
       }
 
