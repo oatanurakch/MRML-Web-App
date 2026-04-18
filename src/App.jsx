@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage'
 import SmrRmrPage from './pages/SmrRmrPage'
 import NodePage from './pages/NodePage'
 import ProfilePage from './pages/ProfilePage'
+import DisplacementPage from './pages/DisplacementPage'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'))
@@ -26,6 +27,16 @@ function App() {
         element={
           isLoggedIn ? (
             <DashboardPage setIsLoggedIn={setIsLoggedIn} />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+      <Route
+        path="/displacement"
+        element={
+          isLoggedIn ? (
+            <DisplacementPage setIsLoggedIn={setIsLoggedIn} />
           ) : (
             <Navigate to="/" replace />
           )
@@ -61,6 +72,7 @@ function App() {
           )
         }
       />
+
     </Routes>
   )
 }

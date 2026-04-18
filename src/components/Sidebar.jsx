@@ -1,5 +1,5 @@
 import { Layout, Menu } from 'antd'
-import { DashboardOutlined, BarChartOutlined, ApartmentOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons'
+import { DashboardOutlined, BarChartOutlined, ApartmentOutlined, UserOutlined, LogoutOutlined, LineChartOutlined } from '@ant-design/icons'
 import { useLocation, useNavigate } from 'react-router-dom'
 import './Sidebar.css'
 
@@ -12,6 +12,8 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
   const handleMenuClick = (key) => {
     if (key === 'dashboard') {
       navigate('/dashboard')
+    } else if (key === 'displacement') {
+      navigate('/displacement')
     } else if (key === 'node') {
       navigate('/node')
     } else if (key === 'profile') {
@@ -25,6 +27,7 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
 
   const menuItems = [
     { key: 'dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
+    { key: 'displacement', icon: <LineChartOutlined />, label: 'Displacement' },
     { key: 'node', icon: <ApartmentOutlined />, label: 'Node' },
     { key: 'profile', icon: <UserOutlined />, label: 'Profile' },
     { key: 'smr-rmr', icon: <BarChartOutlined />, label: 'SMR/RMR' },
@@ -34,6 +37,8 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
   let selectedKey = 'dashboard'
   if (location.pathname.startsWith('/node')) {
     selectedKey = 'node'
+  } else if (location.pathname.startsWith('/displacement')) {
+    selectedKey = 'displacement'
   } else if (location.pathname.startsWith('/profile')) {
     selectedKey = 'profile'
   } else if (location.pathname.startsWith('/smr-rmr')) {
@@ -41,10 +46,10 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
   }
 
   return (
-    <Sider 
+    <Sider
       className="app-sidebar"
-      collapsible 
-      collapsed={collapsed} 
+      collapsible
+      collapsed={collapsed}
       onCollapse={onCollapse}
       theme="light"
       width={220}
@@ -53,9 +58,9 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
       <div className="sidebar-brand">
         <span className="sidebar-brand-text">MRML</span>
       </div>
-      <Menu 
-        theme="light" 
-        mode="inline" 
+      <Menu
+        theme="light"
+        mode="inline"
         selectedKeys={[selectedKey]}
         items={menuItems}
         onClick={(e) => handleMenuClick(e.key)}

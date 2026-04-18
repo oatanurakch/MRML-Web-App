@@ -1,33 +1,24 @@
 import { useEffect, useState, useRef } from 'react'
-import { Layout, Row, Col, Card, Select, Button, Typography, message, DatePicker, TimePicker, } from 'antd'
-import { ReloadOutlined, LogoutOutlined, DownloadOutlined, } from '@ant-design/icons'
+import { Layout, Row, Col, Card, Select, Button, Typography, message } from 'antd'
+import { ReloadOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import ReactECharts from 'echarts-for-react'
 import * as echarts from 'echarts'
-import dayjs from 'dayjs'
 import { Sidebar } from '../components/Sidebar'
-import './DashboardPage.css'
-
+import './DisplacementPage.css'
 
 const { Content } = Layout
 const { Title } = Typography
 const { Option } = Select
 
-function DashboardPage({ setIsLoggedIn }) {
+function DisplacementPage({ setIsLoggedIn }) {
   const navigate = useNavigate()
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [nodeList, setNodeList] = useState([])
   const [selectedNode, setSelectedNode] = useState(null)
-  const [timeRange, setTimeRange] = useState('1h')
   const [chartData, setChartData] = useState([])
-
-  const [fromDate, setFromDate] = useState(dayjs().subtract(1, 'day'))
-  const [fromTime, setFromTime] = useState(dayjs().startOf('day'))
-  const [toDate, setToDate] = useState(dayjs())
-  const [toTime, setToTime] = useState(dayjs())
-  const [exportLoading, setExportLoading] = useState(false)
 
   const lastActivityTimeRef = useRef(Date.now())
   const autoRefreshIntervalRef = useRef(null)
@@ -36,35 +27,10 @@ function DashboardPage({ setIsLoggedIn }) {
   const chartRef1 = useRef(null)
   const chartRef2 = useRef(null)
   const chartRef3 = useRef(null)
-  const chartGroupId = 'dashboard-sync-group'
+  const chartGroupId = 'displacement-sync-group'
 
   const updateActivity = () => {
     lastActivityTimeRef.current = Date.now()
-  }
-
-  const getDayHourFromRange = (range) => {
-    switch (range) {
-      case '1h':
-        return { day: 0, hour: 1 }
-      case '3h':
-        return { day: 0, hour: 3 }
-      case '6h':
-        return { day: 0, hour: 6 }
-      case '12h':
-        return { day: 0, hour: 12 }
-      case '1d':
-        return { day: 1, hour: 0 }
-      case '7d':
-        return { day: 7, hour: 0 }
-      case '30d':
-        return { day: 30, hour: 0 }
-      case '3M':
-        return { day: 90, hour: 0 }
-      case '1Y':
-        return { day: 365, hour: 0 }
-      default:
-        return { day: 0, hour: 1 }
-    }
   }
 
   const formatDateTime = (timestamp) => {
@@ -80,20 +46,6 @@ function DashboardPage({ setIsLoggedIn }) {
     const minutes = date.getMinutes().toString().padStart(2, '0')
 
     return `${day} ${month} ${year} ${hours}:${minutes}`
-  }
-
-  const combineDateTime = (dateValue, timeValue) => {
-    if (!dateValue || !timeValue) return null
-
-    return dayjs(dateValue)
-      .hour(dayjs(timeValue).hour())
-      .minute(dayjs(timeValue).minute())
-      .second(dayjs(timeValue).second())
-      .millisecond(0)
-  }
-
-  const formatDateTimeForApi = (value) => {
-    return dayjs(value).format('YYYY-MM-DDTHH:mm:ss')
   }
 
   const buildChartOption = (data, dataKey, lineName, color) => {
@@ -195,29 +147,26 @@ function DashboardPage({ setIsLoggedIn }) {
     }
   }
 
-  const fetchData = async (nodeId = selectedNode, range = timeRange) => {
+  const fetchData = async (nodeId = selectedNode) => {
     if (!nodeId) return
 
-    const { day, hour } = getDayHourFromRange(range)
-
     try {
-      const res = await axios.get(`/api/node/sensordatas/logs/${nodeId}/${day}/${hour}`)
-
+      const res = await axios.get(`/api/node/displacement/logs/${nodeId}/`)
       const raw = Array.isArray(res.data?.data) ? res.data.data : []
 
       const mapped = raw
         .map((item) => ({
           time: item.timestamp,
-          translation_x: item.translation_x,
-          translation_y: item.translation_y,
-          zeta: item.zeta,
+          cumulative_displacement_total: item.cumulative_displacement_total,
+          cumulative_displacement_x: item.cumulative_displacement_x,
+          cumulative_displacement_y: item.cumulative_displacement_y,
         }))
         .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
 
       setChartData(mapped)
     } catch (error) {
-      console.error('Fetch chart data error:', error)
-      message.error('Failed to load chart data', 1)
+      console.error('Fetch displacement data error:', error)
+      message.error('Failed to load displacement chart data', 1)
       setChartData([])
     }
   }
@@ -228,9 +177,9 @@ function DashboardPage({ setIsLoggedIn }) {
 
   useEffect(() => {
     if (selectedNode) {
-      fetchData(selectedNode, timeRange)
+      fetchData(selectedNode)
     }
-  }, [selectedNode, timeRange])
+  }, [selectedNode])
 
   const handleRefresh = async () => {
     updateActivity()
@@ -239,64 +188,7 @@ function DashboardPage({ setIsLoggedIn }) {
     const nodeIdToUse = selectedNode ?? nodes[0]?.id
 
     if (nodeIdToUse) {
-      fetchData(nodeIdToUse, timeRange)
-    }
-  }
-
-  const handleDownloadCSV = async () => {
-    if (!selectedNode) {
-      message.warning('Please select node first')
-      return
-    }
-
-    const fromDateTime = combineDateTime(fromDate, fromTime)
-    const toDateTime = combineDateTime(toDate, toTime)
-
-    if (!fromDateTime || !toDateTime) {
-      message.warning('Please select date and time range')
-      return
-    }
-
-    if (fromDateTime.isAfter(toDateTime)) {
-      message.warning('From date/time must be earlier than To date/time')
-      return
-    }
-
-    setExportLoading(true)
-
-    try {
-      const formData = new URLSearchParams()
-      formData.append('node_sn_id', String(selectedNode))
-      formData.append('date_from', formatDateTimeForApi(fromDateTime))
-      formData.append('date_to', formatDateTimeForApi(toDateTime))
-
-      const res = await axios.post('/api/node/export/', formData, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      })
-
-      const success = res.data?.success
-      const downloadUrl = res.data?.download_url
-      const record_count = res.data?.record_count ?? 0
-
-      if (!success || !downloadUrl) {
-        message.error('Download link not found')
-        return
-      }
-
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.setAttribute('download', `node_${selectedNode}_data.csv`)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      message.success(`Export ready  (${res.data?.record_count ?? 0}) records`)
-    } catch (error) {
-      console.error('Export CSV error:', error)
-      message.error('Failed to download file')
-    } finally {
-      setExportLoading(false)
+      fetchData(nodeIdToUse)
     }
   }
 
@@ -333,7 +225,7 @@ function DashboardPage({ setIsLoggedIn }) {
   useEffect(() => {
     autoRefreshIntervalRef.current = setInterval(() => {
       if (selectedNode) {
-        fetchData(selectedNode, timeRange)
+        fetchData(selectedNode)
       }
     }, 5 * 60 * 1000)
 
@@ -342,7 +234,7 @@ function DashboardPage({ setIsLoggedIn }) {
         clearInterval(autoRefreshIntervalRef.current)
       }
     }
-  }, [selectedNode, timeRange])
+  }, [selectedNode])
 
   useEffect(() => {
     const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click']
@@ -396,7 +288,7 @@ function DashboardPage({ setIsLoggedIn }) {
     return () => {
       echarts.disconnect(chartGroupId)
     }
-  }, [chartData, selectedNode, timeRange])
+  }, [chartData, selectedNode])
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -413,10 +305,10 @@ function DashboardPage({ setIsLoggedIn }) {
                 <img src="/logo.png" alt="MRML Logo" className="dashboard-logo" />
                 <div>
                   <Title level={2} className="dashboard-title dashboard-title-light">
-                    MRML Application
+                    Displacement Chart
                   </Title>
                   <div className="dashboard-hero-subtitle">
-                    Sensor monitoring dashboard with synchronized charts and export tools
+                    Cumulative displacement monitoring with synchronized charts
                   </div>
                 </div>
               </div>
@@ -439,25 +331,6 @@ function DashboardPage({ setIsLoggedIn }) {
                     </Option>
                   ))}
                 </Select>
-
-                <Select
-                  className="dashboard-select"
-                  value={timeRange}
-                  onChange={(value) => {
-                    setTimeRange(value)
-                    updateActivity()
-                  }}
-                >
-                  <Option value="1h">1 Hour</Option>
-                  <Option value="3h">3 Hours</Option>
-                  <Option value="6h">6 Hours</Option>
-                  <Option value="12h">12 Hours</Option>
-                  <Option value="1d">1 Day</Option>
-                  <Option value="7d">7 Days</Option>
-                  <Option value="30d">30 Days</Option>
-                  <Option value="3M">3 Months</Option>
-                  <Option value="1Y">1 Year</Option>
-                </Select>
               </div>
 
               <div className="dashboard-actions">
@@ -477,10 +350,10 @@ function DashboardPage({ setIsLoggedIn }) {
 
             <Row gutter={[20, 20]} align="stretch">
               <Col xs={24} md={12} className="dashboard-col">
-                <Card title="Translation X" className="chart-card dashboard-card">
+                <Card title="Cumulative Displacement Total" className="chart-card dashboard-card">
                   <ReactECharts
                     ref={chartRef1}
-                    option={buildChartOption(chartData, 'translation_x', 'translation_x', '#1677ff')}
+                    option={buildChartOption(chartData, 'cumulative_displacement_total', 'cumulative_displacement_total', '#1677ff')}
                     style={{ height: 320 }}
                     notMerge={true}
                     lazyUpdate={true}
@@ -489,10 +362,10 @@ function DashboardPage({ setIsLoggedIn }) {
               </Col>
 
               <Col xs={24} md={12} className="dashboard-col">
-                <Card title="Translation Y" className="chart-card dashboard-card">
+                <Card title="Cumulative Displacement X" className="chart-card dashboard-card">
                   <ReactECharts
                     ref={chartRef2}
-                    option={buildChartOption(chartData, 'translation_y', 'translation_y', '#52c41a')}
+                    option={buildChartOption(chartData, 'cumulative_displacement_x', 'cumulative_displacement_x', '#52c41a')}
                     style={{ height: 320 }}
                     notMerge={true}
                     lazyUpdate={true}
@@ -501,89 +374,14 @@ function DashboardPage({ setIsLoggedIn }) {
               </Col>
 
               <Col xs={24} md={12} className="dashboard-col">
-                <Card title="Zeta Chart" className="chart-card dashboard-card">
+                <Card title="Cumulative Displacement Y" className="chart-card dashboard-card">
                   <ReactECharts
                     ref={chartRef3}
-                    option={buildChartOption(chartData, 'zeta', 'zeta', '#fa8c16')}
+                    option={buildChartOption(chartData, 'cumulative_displacement_y', 'cumulative_displacement_y', '#fa8c16')}
                     style={{ height: 320 }}
                     notMerge={true}
                     lazyUpdate={true}
                   />
-                </Card>
-              </Col>
-
-              <Col xs={24} md={12} className="dashboard-col">
-                <Card title="Export CSV" className="chart-card dashboard-card export-main-card">
-                  <div className="export-modern">
-                    <div className="export-section export-section-start">
-                      <div className="export-section-title">From</div>
-                      <div className="export-date-grid">
-                        <div className="export-date-box">
-                          <div className="export-box-label">Date</div>
-                          <DatePicker
-                            value={fromDate}
-                            onChange={(value) => setFromDate(value)}
-                            className="export-date"
-                            format="DD MMM YYYY"
-                          />
-                        </div>
-
-                        <div className="export-date-box">
-                          <div className="export-box-label">Time</div>
-                          <TimePicker
-                            value={fromTime}
-                            onChange={(value) => setFromTime(value)}
-                            className="export-time"
-                            format="HH:mm:ss"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="export-duration-box">
-                      Duration: {
-                        (combineDateTime(toDate, toTime) && combineDateTime(fromDate, fromTime))
-                          ? `${combineDateTime(toDate, toTime).diff(combineDateTime(fromDate, fromTime), 'day')} Days ${combineDateTime(toDate, toTime).diff(combineDateTime(fromDate, fromTime), 'hour') % 24} Hours`
-                          : '-'
-                      }
-                    </div>
-
-                    <div className="export-section export-section-end">
-                      <div className="export-section-title">To</div>
-                      <div className="export-date-grid">
-                        <div className="export-date-box">
-                          <div className="export-box-label">Date</div>
-                          <DatePicker
-                            value={toDate}
-                            onChange={(value) => setToDate(value)}
-                            className="export-date"
-                            format="DD MMM YYYY"
-                          />
-                        </div>
-
-                        <div className="export-date-box">
-                          <div className="export-box-label">Time</div>
-                          <TimePicker
-                            value={toTime}
-                            onChange={(value) => setToTime(value)}
-                            className="export-time"
-                            format="HH:mm:ss"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <Button
-                      type="primary"
-                      icon={<DownloadOutlined />}
-                      onClick={handleDownloadCSV}
-                      loading={exportLoading}
-                      className="export-download-btn-modern"
-                      block
-                    >
-                      Download
-                    </Button>
-                  </div>
                 </Card>
               </Col>
             </Row>
@@ -594,4 +392,4 @@ function DashboardPage({ setIsLoggedIn }) {
   )
 }
 
-export default DashboardPage
+export default DisplacementPage
