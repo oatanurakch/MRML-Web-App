@@ -37,8 +37,10 @@
 }
 
 .profile-subtitle {
+  margin-top: 4px;
   color: rgba(241, 245, 249, 0.95);
   font-size: 14px;
+  font-weight: 500;
 }
 
 .profile-widget {

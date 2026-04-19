@@ -43,9 +43,11 @@
   font-size: 30px !important;
 }
 
-.node-subtitle {
+.node-subtitle-light {
+  margin-top: 4px;
   color: rgba(241, 245, 249, 0.95);
   font-size: 14px;
+  font-weight: 500;
 }
 
 .node-refresh-button {

@@ -308,7 +308,7 @@ function DisplacementPage({ setIsLoggedIn }) {
                     Displacement Chart
                   </Title>
                   <div className="dashboard-hero-subtitle">
-                    Cumulative displacement monitoring with synchronized charts
+                    Cumulative displacement monitoring
                   </div>
                 </div>
               </div>

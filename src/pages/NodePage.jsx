@@ -580,7 +580,7 @@ function NodePage({ setIsLoggedIn }) {
                 <img src="/logo.png" alt="MRML Logo" className="node-logo" />
                 <div>
                   <Title level={2} className="node-title">Node</Title>
-                  <Text className="node-subtitle">Node inventory and geolocation data from /api/node/list</Text>
+                  <Text className="node-subtitle-light">Node inventory and geolocation data</Text>
                 </div>
               </div>
               <Button
