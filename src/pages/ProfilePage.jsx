@@ -295,7 +295,7 @@ function ProfilePage({ setIsLoggedIn }) {
               <img src="/logo.png" alt="MRML Logo" className="profile-logo" />
               <div>
                 <Title level={2} className="profile-title">Profile</Title>
-                <Text className="profile-subtitle">Profile summary from login session data</Text>
+                <Text className="profile-subtitle">แสดงข้อมูลโปรไฟล์และจัดการผู้ใช้งานในระบบ</Text>
               </div>
             </div>
           </div>

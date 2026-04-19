@@ -4,7 +4,6 @@ import { ReloadOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import ReactECharts from 'echarts-for-react'
-import * as echarts from 'echarts'
 import { Sidebar } from '../components/Sidebar'
 import './DisplacementPage.css'
 
@@ -25,9 +24,6 @@ function DisplacementPage({ setIsLoggedIn }) {
   const inactivityCheckIntervalRef = useRef(null)
   const isLoggingOutRef = useRef(false)
   const chartRef1 = useRef(null)
-  const chartRef2 = useRef(null)
-  const chartRef3 = useRef(null)
-  const chartGroupId = 'displacement-sync-group'
 
   const updateActivity = () => {
     lastActivityTimeRef.current = Date.now()
@@ -157,7 +153,7 @@ function DisplacementPage({ setIsLoggedIn }) {
       const mapped = raw
         .map((item) => ({
           time: item.timestamp,
-          cumulative_displacement_total: item.cumulative_displacement_total,
+          cumulative_displacement_abs_total: item.cumulative_displacement_abs_total,
           cumulative_displacement_x: item.cumulative_displacement_x,
           cumulative_displacement_y: item.cumulative_displacement_y,
         }))
@@ -272,24 +268,6 @@ function DisplacementPage({ setIsLoggedIn }) {
     updateActivity()
   }, [])
 
-  useEffect(() => {
-    const chart1 = chartRef1.current?.getEchartsInstance?.()
-    const chart2 = chartRef2.current?.getEchartsInstance?.()
-    const chart3 = chartRef3.current?.getEchartsInstance?.()
-
-    if (!chart1 || !chart2 || !chart3) return
-
-    chart1.group = chartGroupId
-    chart2.group = chartGroupId
-    chart3.group = chartGroupId
-
-    echarts.connect(chartGroupId)
-
-    return () => {
-      echarts.disconnect(chartGroupId)
-    }
-  }, [chartData, selectedNode])
-
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sidebar
@@ -305,10 +283,10 @@ function DisplacementPage({ setIsLoggedIn }) {
                 <img src="/logo.png" alt="MRML Logo" className="dashboard-logo" />
                 <div>
                   <Title level={2} className="dashboard-title dashboard-title-light">
-                    Displacement Chart
+                    Accumulated Displacement
                   </Title>
                   <div className="dashboard-hero-subtitle">
-                    Cumulative displacement monitoring
+                    แสดงผลข้อมูลการเคลื่อนที่สะสมทั้งหมดของ Node ที่เลือก
                   </div>
                 </div>
               </div>
@@ -349,36 +327,12 @@ function DisplacementPage({ setIsLoggedIn }) {
             </div>
 
             <Row gutter={[20, 20]} align="stretch">
-              <Col xs={24} md={12} className="dashboard-col">
+              <Col xs={24} md={24} className="dashboard-col">
                 <Card title="Cumulative Displacement Total" className="chart-card dashboard-card">
                   <ReactECharts
                     ref={chartRef1}
-                    option={buildChartOption(chartData, 'cumulative_displacement_total', 'cumulative_displacement_total', '#1677ff')}
-                    style={{ height: 320 }}
-                    notMerge={true}
-                    lazyUpdate={true}
-                  />
-                </Card>
-              </Col>
-
-              <Col xs={24} md={12} className="dashboard-col">
-                <Card title="Cumulative Displacement X" className="chart-card dashboard-card">
-                  <ReactECharts
-                    ref={chartRef2}
-                    option={buildChartOption(chartData, 'cumulative_displacement_x', 'cumulative_displacement_x', '#52c41a')}
-                    style={{ height: 320 }}
-                    notMerge={true}
-                    lazyUpdate={true}
-                  />
-                </Card>
-              </Col>
-
-              <Col xs={24} md={12} className="dashboard-col">
-                <Card title="Cumulative Displacement Y" className="chart-card dashboard-card">
-                  <ReactECharts
-                    ref={chartRef3}
-                    option={buildChartOption(chartData, 'cumulative_displacement_y', 'cumulative_displacement_y', '#fa8c16')}
-                    style={{ height: 320 }}
+                    option={buildChartOption(chartData, 'cumulative_displacement_abs_total', 'cumulative_displacement_abs_total', '#1677ff')}
+                    style={{ height: 460 }}
                     notMerge={true}
                     lazyUpdate={true}
                   />

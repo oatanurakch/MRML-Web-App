@@ -152,7 +152,7 @@ function SmrRmrPage({ setIsLoggedIn }) {
                 <img src="/logo.png" alt="MRML Logo" className="smr-rmr-logo" />
                 <div>
                   <Title level={2} className="smr-rmr-title">SMR/RMR Monitor</Title>
-                  <Text className="smr-rmr-subtitle">Slope Mass Rating and stability summary from latest node analysis</Text>
+                  <Text className="smr-rmr-subtitle">แสดงผลข้อมูล SMR/RMR ของแต่ละ Node ที่ติดตั้งในระบบ</Text>
                 </div>
               </div>
               <Button

@@ -580,7 +580,7 @@ function NodePage({ setIsLoggedIn }) {
                 <img src="/logo.png" alt="MRML Logo" className="node-logo" />
                 <div>
                   <Title level={2} className="node-title">Node</Title>
-                  <Text className="node-subtitle-light">Node inventory and geolocation data</Text>
+                  <Text className="node-subtitle-light">แสดงข้อมูลของ Node</Text>
                 </div>
               </div>
               <Button

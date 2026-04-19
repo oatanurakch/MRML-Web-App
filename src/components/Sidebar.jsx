@@ -12,6 +12,8 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
   const handleMenuClick = (key) => {
     if (key === 'dashboard') {
       navigate('/dashboard')
+    } else if (key === 'displacement-per-time') {
+      navigate('/displacement-per-time')
     } else if (key === 'displacement') {
       navigate('/displacement')
     } else if (key === 'node') {
@@ -27,7 +29,8 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
 
   const menuItems = [
     { key: 'dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
-    { key: 'displacement', icon: <LineChartOutlined />, label: 'Displacement' },
+    { key: 'displacement', icon: <LineChartOutlined />, label: 'Accumulated Displacement' },
+    { key: 'displacement-per-time', icon: <LineChartOutlined />, label: 'Displacement' },
     { key: 'node', icon: <ApartmentOutlined />, label: 'Node' },
     { key: 'profile', icon: <UserOutlined />, label: 'Profile' },
     { key: 'smr-rmr', icon: <BarChartOutlined />, label: 'SMR/RMR' },
@@ -37,6 +40,8 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
   let selectedKey = 'dashboard'
   if (location.pathname.startsWith('/node')) {
     selectedKey = 'node'
+  } else if (location.pathname.startsWith('/displacement-per-time')) {
+    selectedKey = 'displacement-per-time'
   } else if (location.pathname.startsWith('/displacement')) {
     selectedKey = 'displacement'
   } else if (location.pathname.startsWith('/profile')) {
