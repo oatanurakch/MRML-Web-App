@@ -68,7 +68,7 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
 
   const buildChartOption = (data, dataKey, lineName, color) => {
     const total = data.length
-    const visibleCount = 10
+    const visibleCount = 20
 
     const startIndex = Math.max(0, total - visibleCount)
     const endIndex = Math.max(0, total - 1)
@@ -384,12 +384,12 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
             </div>
 
             <Row gutter={[20, 20]} align="stretch">
-              <Col xs={24} md={12} className="dashboard-col">
+              <Col xs={24} md={24} className="dashboard-col">
                 <Card title="Cumulative Displacement Total" className="chart-card dashboard-card">
                   <ReactECharts
                     ref={chartRef1}
                     option={buildChartOption(chartData, 'cumulative_displacement_total', 'cumulative_displacement_total', '#1677ff')}
-                    style={{ height: 320 }}
+                    style={{ height: 420 }}
                     notMerge={true}
                     lazyUpdate={true}
                   />
@@ -401,7 +401,7 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
                   <ReactECharts
                     ref={chartRef2}
                     option={buildChartOption(chartData, 'cumulative_displacement_x', 'cumulative_displacement_x', '#52c41a')}
-                    style={{ height: 320 }}
+                    style={{ height: 420 }}
                     notMerge={true}
                     lazyUpdate={true}
                   />
@@ -413,7 +413,7 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
                   <ReactECharts
                     ref={chartRef3}
                     option={buildChartOption(chartData, 'cumulative_displacement_y', 'cumulative_displacement_y', '#fa8c16')}
-                    style={{ height: 320 }}
+                    style={{ height: 420 }}
                     notMerge={true}
                     lazyUpdate={true}
                   />

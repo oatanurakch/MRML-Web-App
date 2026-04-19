@@ -46,7 +46,7 @@ function DisplacementPage({ setIsLoggedIn }) {
 
   const buildChartOption = (data, dataKey, lineName, color) => {
     const total = data.length
-    const visibleCount = 10
+    const visibleCount = 20
 
     const startIndex = Math.max(0, total - visibleCount)
     const endIndex = Math.max(0, total - 1)
