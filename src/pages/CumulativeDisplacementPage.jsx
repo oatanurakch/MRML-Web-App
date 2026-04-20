@@ -45,7 +45,7 @@ function CumulativeDisplacementPage({ setIsLoggedIn }) {
 
   const buildChartOption = (data, dataKey, lineName, color) => {
     const total = data.length
-    const visibleCount = 20
+    const visibleCount = 30
     const startIndex = Math.max(0, total - visibleCount)
     const endIndex = Math.max(0, total - 1)
 
@@ -328,20 +328,20 @@ function CumulativeDisplacementPage({ setIsLoggedIn }) {
             </div>
 
             <Row gutter={[20, 20]} align="stretch">
-              <Col xs={24} lg={12} className="cumulative-col">
+              <Col xs={24} className="cumulative-col">
                 <Card title="Cumulative Laser A" className="cumulative-chart-card">
                   <ReactECharts
-                    option={buildChartOption(sensorData, 'a', 'A', '#2563eb')}
+                    option={buildChartOption(sensorData, 'a', 'A', '#1677ff')}
                     style={{ height: 360 }}
                     notMerge={true}
                     lazyUpdate={true}
                   />
                 </Card>
               </Col>
-              <Col xs={24} lg={12} className="cumulative-col">
+              <Col xs={24} className="cumulative-col">
                 <Card title="Cumulative Laser B" className="cumulative-chart-card">
                   <ReactECharts
-                    option={buildChartOption(sensorData, 'b', 'B', '#0f766e')}
+                    option={buildChartOption(sensorData, 'b', 'B', '#52c41a')}
                     style={{ height: 360 }}
                     notMerge={true}
                     lazyUpdate={true}
@@ -351,7 +351,7 @@ function CumulativeDisplacementPage({ setIsLoggedIn }) {
               <Col xs={24} className="cumulative-col">
                 <Card title="Cumulative Laser C" className="cumulative-chart-card">
                   <ReactECharts
-                    option={buildChartOption(sensorData, 'c', 'C', '#c2410c')}
+                    option={buildChartOption(sensorData, 'c', 'C', '#fa8c16')}
                     style={{ height: 380 }}
                     notMerge={true}
                     lazyUpdate={true}
