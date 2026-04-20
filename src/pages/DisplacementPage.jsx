@@ -18,6 +18,10 @@ function DisplacementPage({ setIsLoggedIn }) {
   const [nodeList, setNodeList] = useState([])
   const [selectedNode, setSelectedNode] = useState(null)
   const [chartData, setChartData] = useState([])
+  const [latestDisplacementRate, setLatestDisplacementRate] = useState(null)
+  const [measuredDuration, setMeasuredDuration] = useState('0 days, 0 hours, 0 minutes, 0 seconds')
+  const [measurementStartTime, setMeasurementStartTime] = useState('-')
+  const [measurementEndTime, setMeasurementEndTime] = useState('-')
 
   const lastActivityTimeRef = useRef(Date.now())
   const autoRefreshIntervalRef = useRef(null)
@@ -124,6 +128,38 @@ function DisplacementPage({ setIsLoggedIn }) {
     }
   }
 
+  const formatMetricValue = (value, decimalPlaces = 2) => {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) {
+      return '-'
+    }
+
+    return Number(value).toFixed(decimalPlaces)
+  }
+
+  const formatDurationFromSeconds = (totalSeconds) => {
+    const safeSeconds = Math.max(0, Number.isFinite(totalSeconds) ? Math.floor(totalSeconds) : 0)
+    const days = Math.floor(safeSeconds / (24 * 60 * 60))
+    const hours = Math.floor((safeSeconds % (24 * 60 * 60)) / (60 * 60))
+    const minutes = Math.floor((safeSeconds % (60 * 60)) / 60)
+    const seconds = safeSeconds % 60
+
+    return `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`
+  }
+
+  const buildDurationFromTimestamps = (data) => {
+    const validTimes = data
+      .map((item) => new Date(item.time).getTime())
+      .filter((time) => !Number.isNaN(time))
+      .sort((a, b) => a - b)
+
+    if (validTimes.length < 2) {
+      return formatDurationFromSeconds(0)
+    }
+
+    const diffSeconds = Math.floor((validTimes[validTimes.length - 1] - validTimes[0]) / 1000)
+    return formatDurationFromSeconds(diffSeconds)
+  }
+
   const fetchNodeList = async () => {
     try {
       const res = await axios.get('/api/node/list/')
@@ -149,21 +185,32 @@ function DisplacementPage({ setIsLoggedIn }) {
     try {
       const res = await axios.get(`/api/node/displacement/logs/${nodeId}/`)
       const raw = Array.isArray(res.data?.data) ? res.data.data : []
+      const apiTimeDiff = typeof res.data?.TimeDiff === 'string' ? res.data.TimeDiff.trim() : ''
 
       const mapped = raw
         .map((item) => ({
           time: item.timestamp,
-          cumulative_displacement_abs_total: item.cumulative_displacement_abs_total,
-          cumulative_displacement_x: item.cumulative_displacement_x,
-          cumulative_displacement_y: item.cumulative_displacement_y,
+          displacement_rate: item.displacement_rate,
         }))
         .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
 
+      const latestPoint = mapped.length > 0 ? mapped[mapped.length - 1] : null
+      const durationToShow = apiTimeDiff || buildDurationFromTimestamps(mapped)
+      const firstPoint = mapped.length > 0 ? mapped[0] : null
+
       setChartData(mapped)
+      setLatestDisplacementRate(latestPoint?.displacement_rate ?? null)
+      setMeasuredDuration(durationToShow)
+      setMeasurementStartTime(firstPoint?.time ? formatDateTime(firstPoint.time) : '-')
+        setMeasurementEndTime(latestPoint?.time ? formatDateTime(latestPoint.time) : '-')
     } catch (error) {
       console.error('Fetch displacement data error:', error)
       message.error('Failed to load displacement chart data', 1)
       setChartData([])
+      setLatestDisplacementRate(null)
+      setMeasuredDuration('0 days, 0 hours, 0 minutes, 0 seconds')
+      setMeasurementStartTime('-')
+      setMeasurementEndTime('-')
     }
   }
 
@@ -283,10 +330,10 @@ function DisplacementPage({ setIsLoggedIn }) {
                 <img src="/logo.png" alt="MRML Logo" className="dashboard-logo" />
                 <div>
                   <Title level={2} className="dashboard-title dashboard-title-light">
-                    Accumulated Displacement
+                    Displacement Rate
                   </Title>
                   <div className="dashboard-hero-subtitle">
-                    แสดงผลข้อมูลการเคลื่อนที่สะสมทั้งหมดของ Node ที่เลือก
+                    แสดงผลข้อมูลการเคลื่อนที่ต่อเวลาของแต่ละอุปกรณ์ชุดตรวจวัด
                   </div>
                 </div>
               </div>
@@ -326,12 +373,34 @@ function DisplacementPage({ setIsLoggedIn }) {
               </div>
             </div>
 
-            <Row gutter={[20, 20]} align="stretch">
+            <Row gutter={[20, 20]} align="stretch" className="metric-summary-row">
+              <Col xs={24} md={12} className="dashboard-col">
+                <Card className="dashboard-card metric-card metric-card-rate">
+                  <div className="metric-card-label">Latest Displacement Rate</div>
+                  <Title level={2} className="metric-card-value">
+                    {formatMetricValue(latestDisplacementRate)}
+                  </Title>
+                  <div className="metric-card-subtitle">Most recent measurement</div>
+                </Card>
+              </Col>
+              <Col xs={24} md={12} className="dashboard-col">
+                <Card className="dashboard-card metric-card metric-card-days">
+                  <div className="metric-card-label">Measured Duration</div>
+                  <Title level={2} className="metric-card-value metric-card-value-duration">
+                    {measuredDuration}
+                  </Title>
+                  <div className="metric-card-subtitle">Start Time: <span className="metric-card-start-time">{measurementStartTime}</span></div>
+                  <div className="metric-card-subtitle">Last Time: <span className="metric-card-start-time">{measurementEndTime}</span></div>
+                </Card>
+              </Col>
+            </Row>
+
+            <Row gutter={[20, 20]} align="stretch" className="chart-section-row">
               <Col xs={24} md={24} className="dashboard-col">
                 <Card title="Cumulative Displacement Total" className="chart-card dashboard-card">
                   <ReactECharts
                     ref={chartRef1}
-                    option={buildChartOption(chartData, 'cumulative_displacement_abs_total', 'cumulative_displacement_abs_total', '#1677ff')}
+                    option={buildChartOption(chartData, 'displacement_rate', 'displacement_rate', '#1677ff')}
                     style={{ height: 460 }}
                     notMerge={true}
                     lazyUpdate={true}

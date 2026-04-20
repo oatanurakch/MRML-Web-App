@@ -9,7 +9,7 @@
 
 
 .dashboard-hero {
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 }
 
 .dashboard-hero-top {
@@ -17,7 +17,7 @@
   border-radius: 20px;
   padding: 20px 24px;
   color: #f9fafb;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   box-shadow: 0 14px 34px rgba(15, 118, 110, 0.24);
 }
 
@@ -75,7 +75,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin-bottom: 22px;
+  margin-bottom: 20px;
   padding: 18px 20px;
   background: rgba(255, 255, 255, 0.82);
   border-radius: 16px;

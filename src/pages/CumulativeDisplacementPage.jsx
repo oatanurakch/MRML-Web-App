@@ -1,54 +1,31 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Layout, Row, Col, Card, Select, Button, Typography, message } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import ReactECharts from 'echarts-for-react'
-import * as echarts from 'echarts'
 import { Sidebar } from '../components/Sidebar'
-import './DisplacementPage.css'
+import './CumulativeDisplacementPage.css'
 
 const { Content } = Layout
 const { Title } = Typography
 const { Option } = Select
 
-function DisplacementPerTimePage({ setIsLoggedIn }) {
+function CumulativeDisplacementPage({ setIsLoggedIn }) {
   const navigate = useNavigate()
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [nodeList, setNodeList] = useState([])
   const [selectedNode, setSelectedNode] = useState(null)
-  const [timeRange, setTimeRange] = useState('1h')
-  const [chartData, setChartData] = useState([])
+  const [sensorData, setSensorData] = useState([])
 
   const lastActivityTimeRef = useRef(Date.now())
   const autoRefreshIntervalRef = useRef(null)
   const inactivityCheckIntervalRef = useRef(null)
   const isLoggingOutRef = useRef(false)
-  const chartRef1 = useRef(null)
-  const chartRef2 = useRef(null)
-  const chartRef3 = useRef(null)
-  const chartGroupId = 'displacement-time-sync-group'
 
   const updateActivity = () => {
     lastActivityTimeRef.current = Date.now()
-  }
-
-  const getDayHourFromRange = (range) => {
-    switch (range) {
-      case '1h':
-        return { day: 0, hour: 1 }
-      case '3h':
-        return { day: 0, hour: 3 }
-      case '6h':
-        return { day: 0, hour: 6 }
-      case '12h':
-        return { day: 0, hour: 12 }
-      case '1d':
-        return { day: 1, hour: 0 }
-      default:
-        return { day: 0, hour: 1 }
-    }
   }
 
   const formatDateTime = (timestamp) => {
@@ -69,7 +46,6 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
   const buildChartOption = (data, dataKey, lineName, color) => {
     const total = data.length
     const visibleCount = 20
-
     const startIndex = Math.max(0, total - visibleCount)
     const endIndex = Math.max(0, total - 1)
 
@@ -80,6 +56,7 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
         formatter: (params) => {
           const point = params?.[0]
           if (!point) return ''
+
           return `
             <div>
               <div><strong>${formatDateTime(point.axisValue)}</strong></div>
@@ -91,8 +68,8 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
       grid: {
         top: 30,
         left: 50,
-        right: 30,
-        bottom: 110,
+        right: 24,
+        bottom: 100,
       },
       xAxis: {
         type: 'category',
@@ -100,7 +77,7 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
         data: data.map((item) => item.time),
         axisLabel: {
           rotate: 20,
-          margin: 16,
+          margin: 14,
           formatter: (value) => formatDateTime(value),
         },
       },
@@ -114,7 +91,7 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
           startValue: startIndex,
           endValue: endIndex,
           bottom: 10,
-          height: 18,
+          height: 16,
         },
         {
           type: 'inside',
@@ -132,14 +109,17 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
           smooth: true,
           showSymbol: true,
           symbol: 'circle',
-          symbolSize: 7,
+          symbolSize: 6,
           data: data.map((item) => item[dataKey]),
           lineStyle: {
             width: 2,
-            color: color,
+            color,
           },
           itemStyle: {
-            color: color,
+            color,
+          },
+          areaStyle: {
+            color: `${color}22`,
           },
         },
       ],
@@ -152,7 +132,6 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
       const nodes = Array.isArray(res.data) ? res.data : []
 
       setNodeList(nodes)
-
       if (nodes.length > 0) {
         setSelectedNode((prev) => prev ?? nodes[0].id)
       }
@@ -165,29 +144,27 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
     }
   }
 
-  const fetchData = async (nodeId = selectedNode, range = timeRange) => {
+  const fetchSensorData = async (nodeId = selectedNode) => {
     if (!nodeId) return
 
-    const { day, hour } = getDayHourFromRange(range)
-
     try {
-      const res = await axios.get(`/api/node/displacement/logs/${nodeId}/${day}/${hour}`)
+      const res = await axios.get(`/api/node/sensordatas/logs/${nodeId}/`)
       const raw = Array.isArray(res.data?.data) ? res.data.data : []
 
       const mapped = raw
         .map((item) => ({
           time: item.timestamp,
-          cumulative_displacement_total: item.cumulative_displacement_total,
-          cumulative_displacement_x: item.cumulative_displacement_x,
-          cumulative_displacement_y: item.cumulative_displacement_y,
+          a: item.a,
+          b: item.b,
+          c: item.c,
         }))
-        .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+        .sort((first, second) => new Date(first.time).getTime() - new Date(second.time).getTime())
 
-      setChartData(mapped)
+      setSensorData(mapped)
     } catch (error) {
-      console.error('Fetch displacement per-time data error:', error)
-      message.error('Failed to load displacement chart data', 1)
-      setChartData([])
+      console.error('Fetch cumulative displacement data error:', error)
+      message.error('Failed to load cumulative displacement data', 1)
+      setSensorData([])
     }
   }
 
@@ -197,9 +174,9 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
 
   useEffect(() => {
     if (selectedNode) {
-      fetchData(selectedNode, timeRange)
+      fetchSensorData(selectedNode)
     }
-  }, [selectedNode, timeRange])
+  }, [selectedNode])
 
   const handleRefresh = async () => {
     updateActivity()
@@ -208,7 +185,7 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
     const nodeIdToUse = selectedNode ?? nodes[0]?.id
 
     if (nodeIdToUse) {
-      fetchData(nodeIdToUse, timeRange)
+      fetchSensorData(nodeIdToUse)
     }
   }
 
@@ -245,7 +222,7 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
   useEffect(() => {
     autoRefreshIntervalRef.current = setInterval(() => {
       if (selectedNode) {
-        fetchData(selectedNode, timeRange)
+        fetchSensorData(selectedNode)
       }
     }, 5 * 60 * 1000)
 
@@ -254,7 +231,7 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
         clearInterval(autoRefreshIntervalRef.current)
       }
     }
-  }, [selectedNode, timeRange])
+  }, [selectedNode])
 
   useEffect(() => {
     const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click']
@@ -292,24 +269,6 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
     updateActivity()
   }, [])
 
-  useEffect(() => {
-    const chart1 = chartRef1.current?.getEchartsInstance?.()
-    const chart2 = chartRef2.current?.getEchartsInstance?.()
-    const chart3 = chartRef3.current?.getEchartsInstance?.()
-
-    if (!chart1 || !chart2 || !chart3) return
-
-    chart1.group = chartGroupId
-    chart2.group = chartGroupId
-    chart3.group = chartGroupId
-
-    echarts.connect(chartGroupId)
-
-    return () => {
-      echarts.disconnect(chartGroupId)
-    }
-  }, [chartData, selectedNode, timeRange])
-
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sidebar
@@ -318,27 +277,27 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
         onLogout={handleLogout}
       />
       <Content>
-        <div className="dashboard-page">
-          <div className="dashboard-hero">
-            <div className="dashboard-hero-top">
-              <div className="dashboard-header-left">
-                <img src="/logo.png" alt="MRML Logo" className="dashboard-logo" />
+        <div className="cumulative-page">
+          <div className="cumulative-hero">
+            <div className="cumulative-hero-top">
+              <div className="cumulative-header-left">
+                <img src="/logo.png" alt="MRML Logo" className="cumulative-logo" />
                 <div>
-                  <Title level={2} className="dashboard-title dashboard-title-light">
-                    Displacement
+                  <Title level={2} className="cumulative-title cumulative-title-light">
+                    Cumulative Displacement
                   </Title>
-                  <div className="dashboard-hero-subtitle">
-                    แสดงผลข้อมูลการเคลื่อนที่ต่อช่วงเวลาของ Node ที่เลือก
+                  <div className="cumulative-hero-subtitle">
+                    แสดงผลข้อมูลค่า A, B และ C เทียบกับเวลาในแต่ละอุปกรณ์
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="dashboard-toolbar">
-              <div className="dashboard-filters">
+            <div className="cumulative-toolbar">
+              <div className="cumulative-filters">
                 <Select
                   placeholder="Select Node"
-                  className="dashboard-select"
+                  className="cumulative-select"
                   value={selectedNode}
                   onChange={(value) => {
                     setSelectedNode(value)
@@ -351,24 +310,9 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
                     </Option>
                   ))}
                 </Select>
-
-                <Select
-                  className="dashboard-select"
-                  value={timeRange}
-                  onChange={(value) => {
-                    setTimeRange(value)
-                    updateActivity()
-                  }}
-                >
-                  <Option value="1h">1 Hour</Option>
-                  <Option value="3h">3 Hours</Option>
-                  <Option value="6h">6 Hours</Option>
-                  <Option value="12h">12 Hours</Option>
-                  <Option value="1d">1 Days</Option>
-                </Select>
               </div>
 
-              <div className="dashboard-actions">
+              <div className="cumulative-actions">
                 <Button
                   type="primary"
                   icon={<ReloadOutlined />}
@@ -376,7 +320,7 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
                     handleRefresh()
                     message.loading('REFRESHING...', 1)
                   }}
-                  className="refresh-btn"
+                  className="cumulative-refresh-btn"
                 >
                   Refresh
                 </Button>
@@ -384,36 +328,31 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
             </div>
 
             <Row gutter={[20, 20]} align="stretch">
-              <Col xs={24} md={24} className="dashboard-col">
-                <Card title="Cumulative Displacement Total" className="chart-card dashboard-card">
+              <Col xs={24} lg={12} className="cumulative-col">
+                <Card title="Cumulative Laser A" className="cumulative-chart-card">
                   <ReactECharts
-                    ref={chartRef1}
-                    option={buildChartOption(chartData, 'cumulative_displacement_total', 'cumulative_displacement_total', '#1677ff')}
-                    style={{ height: 420 }}
+                    option={buildChartOption(sensorData, 'a', 'A', '#2563eb')}
+                    style={{ height: 360 }}
                     notMerge={true}
                     lazyUpdate={true}
                   />
                 </Card>
               </Col>
-
-              <Col xs={24} md={12} className="dashboard-col">
-                <Card title="Cumulative Displacement X" className="chart-card dashboard-card">
+              <Col xs={24} lg={12} className="cumulative-col">
+                <Card title="Cumulative Laser B" className="cumulative-chart-card">
                   <ReactECharts
-                    ref={chartRef2}
-                    option={buildChartOption(chartData, 'cumulative_displacement_x', 'cumulative_displacement_x', '#52c41a')}
-                    style={{ height: 420 }}
+                    option={buildChartOption(sensorData, 'b', 'B', '#0f766e')}
+                    style={{ height: 360 }}
                     notMerge={true}
                     lazyUpdate={true}
                   />
                 </Card>
               </Col>
-
-              <Col xs={24} md={12} className="dashboard-col">
-                <Card title="Cumulative Displacement Y" className="chart-card dashboard-card">
+              <Col xs={24} className="cumulative-col">
+                <Card title="Cumulative Laser C" className="cumulative-chart-card">
                   <ReactECharts
-                    ref={chartRef3}
-                    option={buildChartOption(chartData, 'cumulative_displacement_y', 'cumulative_displacement_y', '#fa8c16')}
-                    style={{ height: 420 }}
+                    option={buildChartOption(sensorData, 'c', 'C', '#c2410c')}
+                    style={{ height: 380 }}
                     notMerge={true}
                     lazyUpdate={true}
                   />
@@ -427,4 +366,4 @@ function DisplacementPerTimePage({ setIsLoggedIn }) {
   )
 }
 
-export default DisplacementPerTimePage
+export default CumulativeDisplacementPage

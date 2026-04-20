@@ -6,7 +6,7 @@ import SmrRmrPage from './pages/SmrRmrPage'
 import NodePage from './pages/NodePage'
 import ProfilePage from './pages/ProfilePage'
 import DisplacementPage from './pages/DisplacementPage'
-import DisplacementPerTimePage from './pages/DisplacementPerTimePage'
+import CumulativeDisplacementPage from './pages/CumulativeDisplacementPage'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'))
@@ -44,10 +44,10 @@ function App() {
         }
       />
       <Route
-        path="/displacement-per-time"
+        path="/cumulative-displacement"
         element={
           isLoggedIn ? (
-            <DisplacementPerTimePage setIsLoggedIn={setIsLoggedIn} />
+            <CumulativeDisplacementPage setIsLoggedIn={setIsLoggedIn} />
           ) : (
             <Navigate to="/" replace />
           )
