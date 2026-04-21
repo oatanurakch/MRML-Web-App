@@ -378,7 +378,7 @@ function DisplacementPage({ setIsLoggedIn }) {
                 <Card className="dashboard-card metric-card metric-card-rate">
                   <div className="metric-card-label">Latest Displacement Rate</div>
                   <Title level={2} className="metric-card-value">
-                    {formatMetricValue(latestDisplacementRate)}
+                    {formatMetricValue(latestDisplacementRate)} mm/days
                   </Title>
                   <div className="metric-card-subtitle">Most recent measurement</div>
                 </Card>
