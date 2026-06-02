@@ -284,7 +284,7 @@ function CumulativeDisplacementPage({ setIsLoggedIn }) {
                 <img src="/logo.png" alt="MRML Logo" className="cumulative-logo" />
                 <div>
                   <Title level={2} className="cumulative-title cumulative-title-light">
-                    Cumulative Displacement
+                    Cumulative Laser Measurement
                   </Title>
                   <div className="cumulative-hero-subtitle">
                     แสดงผลข้อมูลค่า A, B และ C เทียบกับเวลาในแต่ละอุปกรณ์
