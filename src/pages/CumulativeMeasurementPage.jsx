@@ -5,13 +5,13 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import ReactECharts from 'echarts-for-react'
 import { Sidebar } from '../components/Sidebar'
-import './CumulativeDisplacementPage.css'
+import './CumulativeMeasurementPage.css'
 
 const { Content } = Layout
 const { Title } = Typography
 const { Option } = Select
 
-function CumulativeDisplacementPage({ setIsLoggedIn }) {
+function CumulativeMeasurementPage({ setIsLoggedIn }) {
   const navigate = useNavigate()
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -366,4 +366,4 @@ function CumulativeDisplacementPage({ setIsLoggedIn }) {
   )
 }
 
-export default CumulativeDisplacementPage
+export default CumulativeMeasurementPage
