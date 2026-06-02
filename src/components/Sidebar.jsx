@@ -12,10 +12,12 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
   const handleMenuClick = (key) => {
     if (key === 'dashboard') {
       navigate('/dashboard')
-    } else if (key === 'cumulative-displacement') {
-      navigate('/cumulative-displacement')
+    } else if (key === 'cumulative-measurement') {
+      navigate('/cumulative-measurement')
     } else if (key === 'displacement') {
       navigate('/displacement')
+    } else if (key == 'cumulative-displacement'){
+      navigate('/cumulative-displacement')
     } else if (key === 'node') {
       navigate('/node')
     } else if (key === 'profile') {
@@ -30,7 +32,8 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
   const menuItems = [
     { key: 'dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
     { key: 'displacement', icon: <LineChartOutlined />, label: 'Displacement Rate' },
-    { key: 'cumulative-displacement', icon: <LineChartOutlined />, label: 'Cumulative Measurement' },
+    { key: 'cumulative-displacement', icon: <LineChartOutlined />, label: 'Cumulative Displacement' },
+    { key: 'cumulative-measurement', icon: <LineChartOutlined />, label: 'Cumulative Measurement' },
     { key: 'node', icon: <ApartmentOutlined />, label: 'Node' },
     { key: 'profile', icon: <UserOutlined />, label: 'Profile' },
     { key: 'smr-rmr', icon: <BarChartOutlined />, label: 'SMR/RMR' },
