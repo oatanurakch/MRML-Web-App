@@ -156,7 +156,7 @@
 }
 
 .metric-card {
-  min-height: 180px;
+  min-height: 110px;
   position: relative;
   background: linear-gradient(145deg, #ffffff 0%, #f9fbff 100%);
   border: 1px solid #e6edf5 !important;
@@ -164,11 +164,27 @@
 
 .metric-card .ant-card-body {
   justify-content: center;
-  padding: 20px 22px !important;
+  padding: 12px 14px !important;
 }
 
 .metric-card::after {
   content: none;
+}
+
+.metric-card-critical {
+  background:
+    radial-gradient(circle at 88% 14%, rgba(16, 185, 129, 0.08), transparent 42%),
+    linear-gradient(145deg, #ffffff 0%, #fdf0f0 100%);
+  border-color: #fad1d1 !important;
+  border-left: 4px solid #d71e1e !important;
+}
+
+.metric-card-latest {
+  background:
+    radial-gradient(circle at 88% 14%, rgba(59, 130, 246, 0.08), transparent 42%),
+    linear-gradient(145deg, #ffffff 0%, #f0f9ff 100%);
+  border-color: #dbeafe !important;
+  border-left: 4px solid #3b82f6 !important;
 }
 
 .metric-card-rate {
@@ -179,25 +195,46 @@
 }
 
 .metric-card-days {
+  /* background: #ffffff */
   background:
     radial-gradient(circle at 88% 14%, rgba(245, 158, 11, 0.08), transparent 42%),
-    linear-gradient(145deg, #ffffff 0%, #fffbf3 100%);
+    linear-gradient(145deg, #ffffff 0%, #fffbf3 100%); 
   border-color: #f3e7cd !important;
+  border-left: 4px solid #eaae2e !important;
 }
 
-.metric-card-label {
-  font-size: 13px;
+/* .metric-card-label {
+  font-size: 14px;
   text-transform: uppercase;
-  letter-spacing: 0.7px;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: #475569;
+} */
+
+.metric-card-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.metric-card-label-time {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   font-weight: 700;
   color: #475569;
 }
 
 .metric-card-value {
-  margin: 6px 0 2px !important;
-  font-size: 34px !important;
+  margin: 4px 0 0 !important;
+  font-size: 30px !important;
   font-weight: 800 !important;
-  line-height: 1.15 !important;
+  line-height: 1.1 !important;
   color: #0f172a !important;
 }
 
@@ -208,16 +245,72 @@
 }
 
 .metric-card-value-duration {
-  font-size: 24px !important;
-  line-height: 1.35 !important;
+  font-size: 16px !important;
+  line-height: 1.25 !important;
   white-space: normal;
+  margin-top: 2px !important;
 }
 
 .metric-card-start-time {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   color: #1f2937;
 }
+
+.measurement-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: nowrap;
+}
+
+.measurement-card {
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  border: 1px solid #e6eef8;
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-width: 100px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 100%;
+  position: relative;
+}
+
+.measurement-label {
+  font-size: 9px;
+  color: #546277;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.measurement-time {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #0b1220;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.measurement-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+  background: transparent;
+}
+
+.measurement-card-start::before { background: linear-gradient(180deg,#34d399,#10b981); }
+.measurement-card-prev::before { background: linear-gradient(180deg,#f59e0b,#f97316); }
+.measurement-card-last::before { background: linear-gradient(180deg,#60a5fa,#3b82f6); }
 
 @media (max-width: 992px) {
   .dashboard-page {
@@ -258,6 +351,8 @@
 
   .metric-summary-row {
     margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
   }
 
   .chart-section-row {
@@ -270,18 +365,30 @@
   }
 
   .metric-card {
-    min-height: 165px;
+    min-height: 100px;
   }
 
   .metric-card-value {
-    font-size: 28px !important;
+    font-size: 20px !important;
   }
 
   .metric-card-value-duration {
-    font-size: 18px !important;
+    font-size: 14px !important;
+  }
+
+  .metric-card-label {
+    font-size: 10px;
   }
 
   .metric-card-start-time {
-    font-size: 13px;
+    font-size: 10px;
   }
+}
+
+@media (max-width: 768px) {
+  .measurement-grid { flex-direction: column; gap: 6px; }
+  .measurement-card { max-width: 100%; min-width: 0; padding: 6px 8px; }
+  .measurement-time { font-size: 11px; }
+  .measurement-label { font-size: 8px; }
+  .measurement-card::before { left: 6px; }
 }

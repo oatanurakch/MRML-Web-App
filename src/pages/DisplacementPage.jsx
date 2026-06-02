@@ -21,6 +21,7 @@ function DisplacementPage({ setIsLoggedIn }) {
   const [latestDisplacementRate, setLatestDisplacementRate] = useState(null)
   const [measuredDuration, setMeasuredDuration] = useState('0 days, 0 hours, 0 minutes, 0 seconds')
   const [measurementStartTime, setMeasurementStartTime] = useState('-')
+  const [measurementPrevTime, setmeasurementPrevTime] = useState('-');
   const [measurementEndTime, setMeasurementEndTime] = useState('-')
 
   const lastActivityTimeRef = useRef(Date.now())
@@ -195,6 +196,7 @@ function DisplacementPage({ setIsLoggedIn }) {
         .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
 
       const latestPoint = mapped.length > 0 ? mapped[mapped.length - 1] : null
+      const prevPoint = mapped.length > 0 ? mapped[mapped.length - 2] : null
       const durationToShow = apiTimeDiff || buildDurationFromTimestamps(mapped)
       const firstPoint = mapped.length > 0 ? mapped[0] : null
 
@@ -202,6 +204,7 @@ function DisplacementPage({ setIsLoggedIn }) {
       setLatestDisplacementRate(latestPoint?.displacement_rate ?? null)
       setMeasuredDuration(durationToShow)
       setMeasurementStartTime(firstPoint?.time ? formatDateTime(firstPoint.time) : '-')
+      setmeasurementPrevTime(prevPoint?.time ? formatDateTime(prevPoint.time) : '-')
         setMeasurementEndTime(latestPoint?.time ? formatDateTime(latestPoint.time) : '-')
     } catch (error) {
       console.error('Fetch displacement data error:', error)
@@ -210,6 +213,7 @@ function DisplacementPage({ setIsLoggedIn }) {
       setLatestDisplacementRate(null)
       setMeasuredDuration('0 days, 0 hours, 0 minutes, 0 seconds')
       setMeasurementStartTime('-')
+      setmeasurementPrevTime('-')
       setMeasurementEndTime('-')
     }
   }
@@ -375,22 +379,22 @@ function DisplacementPage({ setIsLoggedIn }) {
 
             <Row gutter={[20, 20]} align="stretch" className="metric-summary-row">
               <Col xs={24} md={12} className="dashboard-col">
-                <Card className="dashboard-card metric-card metric-card-rate">
-                  <div className="metric-card-label">Latest Displacement Rate</div>
+                <Card className="dashboard-card metric-card metric-card-critical">
+                  <div className="metric-card-label">Critical Displacement</div>
                   <Title level={2} className="metric-card-value">
-                    {formatMetricValue(latestDisplacementRate)} mm/days
+                    {formatMetricValue(latestDisplacementRate)} mm.
                   </Title>
-                  <div className="metric-card-subtitle">Most recent measurement</div>
                 </Card>
               </Col>
               <Col xs={24} md={12} className="dashboard-col">
-                <Card className="dashboard-card metric-card metric-card-days">
-                  <div className="metric-card-label">Measured Duration</div>
-                  <Title level={2} className="metric-card-value metric-card-value-duration">
-                    {measuredDuration}
+                <Card className="dashboard-card metric-card metric-card-latest">
+                  <div className="metric-card-label"> 
+                    <span>Latest Displacement Rate</span>
+                    <span className="metric-card-label">{measurementEndTime}</span>
+                  </div>
+                  <Title level={2} className="metric-card-value">
+                    {formatMetricValue(latestDisplacementRate)} mm.
                   </Title>
-                  <div className="metric-card-subtitle">Start Time: <span className="metric-card-start-time">{measurementStartTime}</span></div>
-                  <div className="metric-card-subtitle">Last Time: <span className="metric-card-start-time">{measurementEndTime}</span></div>
                 </Card>
               </Col>
             </Row>
