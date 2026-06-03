@@ -394,7 +394,7 @@ function DisplacementPage({ setIsLoggedIn }) {
                     <span className="metric-card-label">{measurementEndTime}</span>
                   </div>
                   <Title level={2} className="metric-card-value">
-                    {formatMetricValue(latestDisplacementRate)} mm.
+                    {formatMetricValue(latestDisplacementRate)} mm. / hr.
                   </Title>
                 </Card>
               </Col>
@@ -402,7 +402,7 @@ function DisplacementPage({ setIsLoggedIn }) {
 
             <Row gutter={[20, 20]} align="stretch" className="chart-section-row">
               <Col xs={24} md={24} className="dashboard-col">
-                <Card title="Cumulative Displacement Total" className="chart-card dashboard-card">
+                <Card title="Displacement Rate Chart" className="chart-card dashboard-card">
                   <ReactECharts
                     ref={chartRef1}
                     option={buildChartOption(chartData, 'displacement_rate', 'displacement_rate', '#1677ff')}

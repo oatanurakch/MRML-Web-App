@@ -45,6 +45,8 @@ export function Sidebar({ collapsed, onCollapse, onLogout }) {
     selectedKey = 'node'
   } else if (location.pathname.startsWith('/cumulative-displacement')) {
     selectedKey = 'cumulative-displacement'
+  } else if (location.pathname.startsWith('/cumulative-measurement')) {
+    selectedKey = 'cumulative-measurement'
   } else if (location.pathname.startsWith('/displacement')) {
     selectedKey = 'displacement'
   } else if (location.pathname.startsWith('/profile')) {

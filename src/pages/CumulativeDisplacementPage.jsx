@@ -18,6 +18,8 @@ function CumulativeDisplacementPage({ setIsLoggedIn }) {
   const [nodeList, setNodeList] = useState([])
   const [selectedNode, setSelectedNode] = useState(null)
   const [sensorData, setSensorData] = useState([])
+  const [measurementEndTime, setMeasurementEndTime] = useState('-')
+  const [latestCumulativeDisplacementRate, setLatestCumulativeDisplacementRate] = useState(null)
 
   const lastActivityTimeRef = useRef(Date.now())
   const autoRefreshIntervalRef = useRef(null)
@@ -41,6 +43,14 @@ function CumulativeDisplacementPage({ setIsLoggedIn }) {
     const minutes = date.getMinutes().toString().padStart(2, '0')
 
     return `${day} ${month} ${year} ${hours}:${minutes}`
+  }
+
+  const formatMetricValue = (value, decimalPlaces = 2) => {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) {
+      return '-'
+    }
+
+    return Number(value).toFixed(decimalPlaces)
   }
 
   const buildChartOption = (data, dataKey, lineName, color) => {
@@ -148,19 +158,26 @@ function CumulativeDisplacementPage({ setIsLoggedIn }) {
     if (!nodeId) return
 
     try {
-      const res = await axios.get(`/api/node/sensordatas/logs/${nodeId}/`)
+      const res = await axios.get(`/api/node/cumulative-displacement/logs/${nodeId}/`)
       const raw = Array.isArray(res.data?.data) ? res.data.data : []
 
       const mapped = raw
         .map((item) => ({
           time: item.timestamp,
-          a: item.a,
-          b: item.b,
-          c: item.c,
+          cumulative_displacement: item.cumulative_displacement,
         }))
         .sort((first, second) => new Date(first.time).getTime() - new Date(second.time).getTime())
 
+      const latestPoint = mapped.length > 0 ? mapped[mapped.length - 1] : null
+
       setSensorData(mapped)
+      if (mapped.length > 0) {
+        setMeasurementEndTime(formatDateTime(mapped[mapped.length - 1].time))
+        setLatestCumulativeDisplacementRate(latestPoint ? latestPoint.cumulative_displacement : null)
+      } else {
+        setMeasurementEndTime('-')
+        setLatestCumulativeDisplacementRate(null)
+      }
     } catch (error) {
       console.error('Fetch cumulative displacement data error:', error)
       message.error('Failed to load cumulative displacement data', 1)
@@ -327,11 +344,25 @@ function CumulativeDisplacementPage({ setIsLoggedIn }) {
               </div>
             </div>
 
+            <Row gutter={[20, 20]} align="stretch" className="metric-summary-row">
+              <Col xs={24} md={8} className="dashboard-col">
+                <Card className="dashboard-card metric-card metric-card-latest">
+                  <div className="metric-card-label">
+                    <span>Cumulative Displacement</span>
+                    <span className="metric-card-label">{measurementEndTime}</span>
+                  </div>
+                  <Title level={2} className="metric-card-value">
+                    {formatMetricValue(latestCumulativeDisplacementRate)} mm.
+                  </Title>
+                </Card>
+              </Col>
+            </Row>
+
             <Row gutter={[20, 20]} align="stretch">
               <Col xs={24} className="cumulative-displacement-col">
                 <Card title="Cumulative Displacement" className="cumulative-displacement-chart-card">
                   <ReactECharts
-                    option={buildChartOption(sensorData, 'a', 'A', '#1677ff')}
+                    option={buildChartOption(sensorData, 'cumulative_displacement', 'Cumulative Displacement', '#1677ff')}
                     style={{ height: 360 }}
                     notMerge={true}
                     lazyUpdate={true}
