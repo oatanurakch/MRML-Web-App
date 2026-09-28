@@ -285,9 +285,13 @@ function DashboardPage({ setIsLoggedIn }) {
         return
       }
 
+      // Backend returns an absolute http:// URL; use only the path so the download
+      // stays same-origin (goes through the /api proxy, avoids mixed-content blocking)
+      const fileUrl = new URL(downloadUrl, window.location.origin)
+
       const link = document.createElement('a')
-      link.href = downloadUrl
-      link.setAttribute('download', `node_${selectedNode}_data.csv`)
+      link.href = fileUrl.pathname + fileUrl.search
+      link.setAttribute('download', '')
       document.body.appendChild(link)
       link.click()
       link.remove()
